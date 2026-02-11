@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENT
+  MANAGER
+  ADMIN
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  name         String
+  role         UserRole  @default(CLIENT)
+  priceGroupId String?   @map("price_group_id")
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  priceGroup    PriceGroup?    @relation(fields: [priceGroupId], references: [id])
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PriceGroup {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  externalId String? @unique @map("external_id")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  users  User[]
+  prices Price[]
+
+  @@map("price_groups")
+}
+
+model SyncGroup {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("sync_groups")
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  externalId  String    @unique @map("external_id")
+  name        String
+  cleanName   String    @map("clean_name")
+  description String?
+  category    String?
+  unit        String?
+  imageUrl    String?   @map("image_url")
+  expiryDate  DateTime? @map("expiry_date")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  stocks Stock[]
+  prices Price[]
+
+  @@index([cleanName])
+  @@index([expiryDate])
+  @@index([category])
+  @@map("products")
+}
+
+model Stock {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  quantity  Float    @default(0)
+  warehouse String?
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, warehouse])
+  @@map("stocks")
+}
+
+model Price {
+  id           String   @id @default(uuid())
+  productId    String   @map("product_id")
+  priceGroupId String   @map("price_group_id")
+  value        Float    @default(0)
+  currency     String   @default("RUB")
+  updatedAt    DateTime @updatedAt
+
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  priceGroup PriceGroup @relation(fields: [priceGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, priceGroupId])
+  @@map("prices")
+}
