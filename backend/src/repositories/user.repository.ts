@@ -13,7 +13,7 @@ export const userRepository = {
   async findById(id: string) {
     return prisma.user.findUnique({
       where: { id },
-      include: { priceGroup: true },
+      include: { priceGroup: true, clients: { select: { id: true } } },
     });
   },
 

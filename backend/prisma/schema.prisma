@@ -13,6 +13,12 @@ enum UserRole {
   ADMIN
 }
 
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
@@ -20,12 +26,16 @@ model User {
   name         String
   role         UserRole  @default(CLIENT)
   priceGroupId String?   @map("price_group_id")
+  managerId    String?   @map("manager_id")
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   priceGroup    PriceGroup?    @relation(fields: [priceGroupId], references: [id])
+  manager       User?          @relation("ManagerClients", fields: [managerId], references: [id])
+  clients       User[]         @relation("ManagerClients")
   refreshTokens RefreshToken[]
+  orders        Order[]
 
   @@map("users")
 }
@@ -79,8 +89,9 @@ model Product {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  stocks Stock[]
-  prices Price[]
+  stocks     Stock[]
+  prices     Price[]
+  orderItems OrderItem[]
 
   @@index([cleanName])
   @@index([expiryDate])
@@ -114,4 +125,36 @@ model Price {
 
   @@unique([productId, priceGroupId])
   @@map("prices")
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique @map("order_number")
+  userId      String      @map("user_id")
+  status      OrderStatus @default(PENDING)
+  comment     String?
+  totalAmount Float       @map("total_amount")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@index([userId, createdAt])
+  @@index([orderNumber])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String @map("order_id")
+  productId String @map("product_id")
+  quantity  Int
+  price     Float
+  currency  String @default("RUB")
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
 }

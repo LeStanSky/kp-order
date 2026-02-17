@@ -26,7 +26,19 @@ jest.mock('../config/database', () => {
     },
     price: {
       upsert: jest.fn(),
+      findMany: jest.fn(),
     },
+    order: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      count: jest.fn(),
+    },
+    orderItem: {
+      findMany: jest.fn(),
+    },
+    $transaction: jest.fn(),
     $connect: jest.fn(),
     $disconnect: jest.fn(),
     $queryRaw: jest.fn(),
@@ -48,6 +60,8 @@ jest.mock('../config/redis', () => {
     keys: jest.fn().mockResolvedValue([]),
     exists: jest.fn(),
     ping: jest.fn(),
+    incr: jest.fn(),
+    expire: jest.fn(),
     status: 'ready',
     connect: jest.fn(),
     quit: jest.fn(),
