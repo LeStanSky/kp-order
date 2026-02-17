@@ -115,6 +115,20 @@ export const productRepository = {
     });
   },
 
+  async updateById(
+    id: string,
+    data: {
+      description?: string | null;
+      characteristics?: Record<string, string>;
+      imageUrl?: string | null;
+    },
+  ) {
+    return prisma.product.update({
+      where: { id },
+      data,
+    });
+  },
+
   async getCategories() {
     const categories = await prisma.product.findMany({
       where: { isActive: true, category: { not: null } },

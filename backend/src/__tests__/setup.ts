@@ -12,6 +12,7 @@ jest.mock('../config/database', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
       upsert: jest.fn(),
       count: jest.fn(),
     },

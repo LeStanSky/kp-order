@@ -36,6 +36,9 @@ export const env = {
   // Frontend
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 
+  // Uploads
+  UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
+
   // Logging
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
 };

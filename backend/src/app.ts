@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -13,6 +14,7 @@ const app = express();
 app.use(helmet());
 app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
+app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR)));
 app.use('/api', apiLimiter);
 
 // Health check

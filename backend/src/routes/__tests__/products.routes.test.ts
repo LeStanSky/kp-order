@@ -24,8 +24,10 @@ function makeToken(
   );
 }
 
+const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
+
 const sampleProduct = {
-  id: 'prod-1',
+  id: VALID_UUID,
   externalId: 'ext-1',
   name: 'Beer / 2026-06-01',
   cleanName: 'Beer',
@@ -33,6 +35,7 @@ const sampleProduct = {
   category: 'Drinks',
   unit: 'шт',
   imageUrl: null,
+  characteristics: null,
   isActive: true,
   expiryDate: new Date('2026-06-01'),
   createdAt: new Date(),
@@ -116,11 +119,11 @@ describe('Products Routes', () => {
       (db.product.findUnique as jest.Mock).mockResolvedValue(sampleProduct);
 
       const res = await request(app)
-        .get('/api/products/prod-1')
+        .get(`/api/products/${VALID_UUID}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.id).toBe('prod-1');
+      expect(res.body.id).toBe(VALID_UUID);
       expect(res.body.name).toBe('Beer');
     });
 
@@ -129,14 +132,24 @@ describe('Products Routes', () => {
       (db.product.findUnique as jest.Mock).mockResolvedValue(null);
 
       const res = await request(app)
-        .get('/api/products/non-existent')
+        .get(`/api/products/${VALID_UUID}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(404);
     });
 
+    it('should return 422 for invalid id format', async () => {
+      const token = makeToken();
+
+      const res = await request(app)
+        .get('/api/products/not-a-uuid')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(422);
+    });
+
     it('should return 401 without auth', async () => {
-      const res = await request(app).get('/api/products/prod-1');
+      const res = await request(app).get(`/api/products/${VALID_UUID}`);
       expect(res.status).toBe(401);
     });
   });
@@ -201,6 +214,176 @@ describe('Products Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.data[0]).toHaveProperty('expiryDate');
       expect(res.body.data[0]).toHaveProperty('expiryStatus');
+    });
+  });
+
+  describe('PATCH /api/products/:id', () => {
+    it('should update product description (ADMIN)', async () => {
+      const token = makeToken({ role: 'ADMIN' });
+      (db.product.findUnique as jest.Mock).mockResolvedValue(sampleProduct);
+      (db.product.update as jest.Mock).mockResolvedValue({
+        ...sampleProduct,
+        description: 'Updated desc',
+      });
+      (mockRedis.keys as jest.Mock).mockResolvedValue([]);
+
+      const res = await request(app)
+        .patch(`/api/products/${VALID_UUID}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ description: 'Updated desc' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.description).toBe('Updated desc');
+    });
+
+    it('should update product characteristics (ADMIN)', async () => {
+      const token = makeToken({ role: 'ADMIN' });
+      const chars = { volume: '500мл', abv: '4.5%' };
+      (db.product.findUnique as jest.Mock).mockResolvedValue(sampleProduct);
+      (db.product.update as jest.Mock).mockResolvedValue({
+        ...sampleProduct,
+        characteristics: chars,
+      });
+      (mockRedis.keys as jest.Mock).mockResolvedValue([]);
+
+      const res = await request(app)
+        .patch(`/api/products/${VALID_UUID}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ characteristics: chars });
+
+      expect(res.status).toBe(200);
+      expect(res.body.characteristics).toEqual(chars);
+    });
+
+    it('should return 403 for non-ADMIN roles', async () => {
+      const token = makeToken({ role: 'CLIENT' });
+
+      const res = await request(app)
+        .patch(`/api/products/${VALID_UUID}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ description: 'test' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should return 422 for invalid UUID', async () => {
+      const token = makeToken({ role: 'ADMIN' });
+
+      const res = await request(app)
+        .patch('/api/products/not-a-uuid')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ description: 'test' });
+
+      expect(res.status).toBe(422);
+    });
+
+    it('should return 422 for empty body', async () => {
+      const token = makeToken({ role: 'ADMIN' });
+
+      const res = await request(app)
+        .patch(`/api/products/${VALID_UUID}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect(res.status).toBe(422);
+    });
+
+    it('should return 404 for non-existent product', async () => {
+      const token = makeToken({ role: 'ADMIN' });
+      (db.product.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const res = await request(app)
+        .patch(`/api/products/${VALID_UUID}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ description: 'test' });
+
+      expect(res.status).toBe(404);
+    });
+
+    it('should return 401 without auth', async () => {
+      const res = await request(app)
+        .patch(`/api/products/${VALID_UUID}`)
+        .send({ description: 'test' });
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('POST /api/products/:id/image', () => {
+    it('should return 403 for non-ADMIN roles', async () => {
+      const token = makeToken({ role: 'CLIENT' });
+
+      const res = await request(app)
+        .post(`/api/products/${VALID_UUID}/image`)
+        .set('Authorization', `Bearer ${token}`)
+        .attach('image', Buffer.from('fake-image'), 'test.jpg');
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should return 422 for invalid UUID', async () => {
+      const token = makeToken({ role: 'ADMIN' });
+
+      const res = await request(app)
+        .post('/api/products/not-a-uuid/image')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('image', Buffer.from('fake-image'), 'test.jpg');
+
+      expect(res.status).toBe(422);
+    });
+
+    it('should return 401 without auth', async () => {
+      const res = await request(app)
+        .post(`/api/products/${VALID_UUID}/image`)
+        .attach('image', Buffer.from('fake-image'), 'test.jpg');
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('DELETE /api/products/:id/image', () => {
+    it('should delete image and return updated product (ADMIN)', async () => {
+      const token = makeToken({ role: 'ADMIN' });
+      const productWithImage = { ...sampleProduct, imageUrl: '/uploads/old.jpg' };
+      (db.product.findUnique as jest.Mock).mockResolvedValue(productWithImage);
+      (db.product.update as jest.Mock).mockResolvedValue({
+        ...sampleProduct,
+        imageUrl: null,
+      });
+      (mockRedis.keys as jest.Mock).mockResolvedValue([]);
+
+      const res = await request(app)
+        .delete(`/api/products/${VALID_UUID}/image`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.imageUrl).toBeNull();
+    });
+
+    it('should return 403 for non-ADMIN roles', async () => {
+      const token = makeToken({ role: 'MANAGER' });
+
+      const res = await request(app)
+        .delete(`/api/products/${VALID_UUID}/image`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should return 422 for invalid UUID', async () => {
+      const token = makeToken({ role: 'ADMIN' });
+
+      const res = await request(app)
+        .delete('/api/products/not-a-uuid/image')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(422);
+    });
+
+    it('should return 401 without auth', async () => {
+      const res = await request(app).delete(`/api/products/${VALID_UUID}/image`);
+
+      expect(res.status).toBe(401);
     });
   });
 });

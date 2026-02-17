@@ -1,6 +1,7 @@
 import { UserRole } from '../generated/prisma/client';
 import { productRepository } from '../repositories/product.repository';
 import { cacheService } from './cache.service';
+import { uploadService } from './upload.service';
 import { NotFoundError } from '../utils/errors';
 import { GetProductsOptions } from '../types/erp.types';
 
@@ -85,6 +86,7 @@ export const productsService = {
       category: product.category,
       unit: product.unit,
       imageUrl: product.imageUrl,
+      characteristics: product.characteristics ?? null,
       isActive: product.isActive,
       stock: (product.stocks as any[]).reduce((sum: number, s: any) => sum + s.quantity, 0),
       stocks: product.stocks.map((s: any) => ({
@@ -105,6 +107,54 @@ export const productsService = {
     }
 
     return base;
+  },
+
+  async updateProduct(
+    id: string,
+    data: { description?: string | null; characteristics?: Record<string, string> },
+  ) {
+    const product = await productRepository.findById(id);
+    if (!product) {
+      throw new NotFoundError('Product not found');
+    }
+
+    const updated = await productRepository.updateById(id, data);
+    await cacheService.delByPattern('products:*');
+    return updated;
+  },
+
+  async uploadImage(id: string, file: Express.Multer.File) {
+    const product = await productRepository.findById(id);
+    if (!product) {
+      throw new NotFoundError('Product not found');
+    }
+
+    // Delete old image if it was a local upload
+    const oldFilename = uploadService.filenameFromUrl(product.imageUrl);
+    if (oldFilename) {
+      uploadService.deleteFile(uploadService.getAbsolutePath(oldFilename));
+    }
+
+    const imageUrl = uploadService.getImageUrl(file.filename);
+    const updated = await productRepository.updateById(id, { imageUrl });
+    await cacheService.delByPattern('products:*');
+    return updated;
+  },
+
+  async deleteImage(id: string) {
+    const product = await productRepository.findById(id);
+    if (!product) {
+      throw new NotFoundError('Product not found');
+    }
+
+    const filename = uploadService.filenameFromUrl(product.imageUrl);
+    if (filename) {
+      uploadService.deleteFile(uploadService.getAbsolutePath(filename));
+    }
+
+    const updated = await productRepository.updateById(id, { imageUrl: null });
+    await cacheService.delByPattern('products:*');
+    return updated;
   },
 
   async getCategories() {
