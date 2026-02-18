@@ -18,6 +18,23 @@ interface ProductRowProps {
   product: Product;
 }
 
+/**
+ * Для товаров группы РОЗЛИВ (единица — дкл) вычисляет отображаемый остаток в штуках.
+ * Объём тары определяется из названия: 10 л → 1 дкл, 20 л → 2 дкл, 30 л → 3 дкл.
+ * Остаток в штуках = stock_в_дкл / дкл_на_штуку.
+ * Если объём не найден в названии — возвращает исходные значения.
+ */
+function resolveStock(name: string, stock: number, unit: string | undefined) {
+  if (unit === 'дкл') {
+    const match = name.match(/(?<!\d)(10|20|30)\s*л/i);
+    if (match) {
+      const factor = parseInt(match[1], 10) / 10; // 10→1, 20→2, 30→3
+      return { value: Math.floor(stock / factor), unit: 'шт' };
+    }
+  }
+  return { value: stock, unit: unit ?? 'шт' };
+}
+
 export function ProductRow({ product }: ProductRowProps) {
   const { hasRole } = useAuthStore();
   const { items, addItem, updateQuantity } = useCartStore();
@@ -26,7 +43,9 @@ export function ProductRow({ product }: ProductRowProps) {
   const isClient = hasRole('CLIENT');
   const cartItem = items.find((i) => i.productId === product.id);
   const price = product.prices[0];
-  const outOfStock = product.stock === 0;
+
+  const displayStock = resolveStock(product.name, product.stock, product.unit);
+  const outOfStock = displayStock.value === 0;
 
   const handleAdd = () => {
     if (inputQty < 1) return;
@@ -51,18 +70,18 @@ export function ProductRow({ product }: ProductRowProps) {
         '&:last-child td': { borderBottom: 0 },
       }}
     >
-      {/* Название + срок годности */}
+      {/* Название + срок годности (только для MANAGER/ADMIN) */}
       <TableCell>
         <Typography variant="body2" fontWeight={500}>
           {product.name}
         </Typography>
-        {product.expiryStatus && <ExpiryBadge expiryStatus={product.expiryStatus} />}
+        {!isClient && product.expiryStatus && <ExpiryBadge expiryStatus={product.expiryStatus} />}
       </TableCell>
 
       {/* Единица измерения */}
       <TableCell align="center">
         <Typography variant="body2" color="text.secondary">
-          {product.unit ?? 'шт'}
+          {displayStock.unit}
         </Typography>
       </TableCell>
 
@@ -70,10 +89,10 @@ export function ProductRow({ product }: ProductRowProps) {
       <TableCell align="right">
         <Typography
           variant="body2"
-          color={product.stock < 10 ? 'warning.main' : 'text.primary'}
-          fontWeight={product.stock < 10 ? 600 : 400}
+          color={displayStock.value < 10 ? 'warning.main' : 'text.primary'}
+          fontWeight={displayStock.value < 10 ? 600 : 400}
         >
-          {product.stock}
+          {displayStock.value}
         </Typography>
       </TableCell>
 

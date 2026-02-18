@@ -17,12 +17,9 @@ export const productRepository = {
 
     const include: Prisma.ProductInclude = {
       stocks: true,
-      ...(priceGroupId && {
-        prices: {
-          where: { priceGroupId },
-          include: { priceGroup: true },
-        },
-      }),
+      prices: priceGroupId
+        ? { where: { priceGroupId }, include: { priceGroup: true } }
+        : { where: { priceGroup: { name: 'Прайс основной' } }, include: { priceGroup: true } },
     };
 
     const [products, total] = await Promise.all([
@@ -44,12 +41,9 @@ export const productRepository = {
       where: { id },
       include: {
         stocks: true,
-        ...(priceGroupId && {
-          prices: {
-            where: { priceGroupId },
-            include: { priceGroup: true },
-          },
-        }),
+        prices: priceGroupId
+          ? { where: { priceGroupId }, include: { priceGroup: true } }
+          : { where: { priceGroup: { name: 'Прайс основной' } }, include: { priceGroup: true } },
       },
     });
   },
