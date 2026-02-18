@@ -1,16 +1,44 @@
-import { useState, useCallback } from 'react';
-import { Box, Grid, Pagination, Skeleton, Typography, Stack } from '@mui/material';
+import { useState, useCallback, useMemo, Fragment } from 'react';
+import {
+  Box,
+  Typography,
+  Stack,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Pagination,
+} from '@mui/material';
 import { useProducts, useCategories } from '@/hooks/useProducts';
-import { ProductCard } from '@/components/products/ProductCard';
+import { ProductRow } from '@/components/products/ProductRow';
 import { CategoryFilter } from '@/components/products/CategoryFilter';
 import { SearchBar } from '@/components/products/SearchBar';
+import { useAuthStore } from '@/store/authStore';
+import type { Product } from '@/types/product.types';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 200;
+
+function groupByCategory(products: Product[]): Map<string, Product[]> {
+  const map = new Map<string, Product[]>();
+  for (const p of products) {
+    const key = p.category?.name ?? 'Без категории';
+    const group = map.get(key) ?? [];
+    group.push(p);
+    map.set(key, group);
+  }
+  return map;
+}
 
 export function ProductsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
+  const { hasRole } = useAuthStore();
+  const isClient = hasRole('CLIENT');
 
   const { data: productsData, isLoading } = useProducts({
     page,
@@ -31,13 +59,14 @@ export function ProductsPage() {
     setPage(1);
   };
 
+  const grouped = useMemo(
+    () => (productsData ? groupByCategory(productsData.data) : null),
+    [productsData],
+  );
+
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3 }}>
-        Каталог товаров
-      </Typography>
-
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }} alignItems="center">
         <SearchBar onSearch={handleSearch} />
         {categories && (
           <CategoryFilter categories={categories} selected={category} onChange={handleCategory} />
@@ -45,29 +74,65 @@ export function ProductsPage() {
       </Stack>
 
       {isLoading ? (
-        <Grid container spacing={2}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <Skeleton variant="rectangular" height={200} />
-            </Grid>
+        <Box>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" height={44} sx={{ mb: 1, borderRadius: 1 }} />
           ))}
-        </Grid>
+        </Box>
+      ) : !grouped || productsData?.data.length === 0 ? (
+        <Typography color="text.secondary">Товары не найдены</Typography>
       ) : (
         <>
-          {productsData?.data.length === 0 ? (
-            <Typography color="text.secondary">Товары не найдены</Typography>
-          ) : (
-            <Grid container spacing={2}>
-              {productsData?.data.map((product) => (
-                <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                  <ProductCard product={product} />
-                </Grid>
-              ))}
-            </Grid>
-          )}
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Наименование</TableCell>
+                  <TableCell align="center">Ед.</TableCell>
+                  <TableCell align="right">Остаток</TableCell>
+                  <TableCell align="right">Цена</TableCell>
+                  {isClient && (
+                    <>
+                      <TableCell align="center">Кол-во</TableCell>
+                      <TableCell align="center" />
+                      <TableCell align="center">В корзине</TableCell>
+                    </>
+                  )}
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {Array.from(grouped.entries()).map(([catName, products]) => (
+                  <Fragment key={catName}>
+                    {/* Заголовок категории */}
+                    <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                      <TableCell
+                        colSpan={isClient ? 7 : 4}
+                        sx={{
+                          py: 0.75,
+                          fontWeight: 700,
+                          fontSize: '0.8rem',
+                          color: 'text.secondary',
+                          letterSpacing: 0.5,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {catName}
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Строки товаров */}
+                    {products.map((product) => (
+                      <ProductRow key={product.id} product={product} />
+                    ))}
+                  </Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
           {productsData && productsData.pagination.totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination
                 count={productsData.pagination.totalPages}
                 page={page}
