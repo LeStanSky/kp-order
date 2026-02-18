@@ -12,7 +12,10 @@ import {
   TableRow,
   Paper,
   Pagination,
+  IconButton,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useProducts, useCategories } from '@/hooks/useProducts';
 import { ProductRow } from '@/components/products/ProductRow';
 import { CategoryFilter } from '@/components/products/CategoryFilter';
@@ -20,12 +23,12 @@ import { SearchBar } from '@/components/products/SearchBar';
 import { useAuthStore } from '@/store/authStore';
 import type { Product } from '@/types/product.types';
 
-const PAGE_SIZE = 200;
+const PAGE_SIZE = 100;
 
 function groupByCategory(products: Product[]): Map<string, Product[]> {
   const map = new Map<string, Product[]>();
   for (const p of products) {
-    const key = p.category?.name ?? 'Без категории';
+    const key = p.category ?? 'Без категории';
     const group = map.get(key) ?? [];
     group.push(p);
     map.set(key, group);
@@ -37,7 +40,17 @@ export function ProductsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const { hasRole } = useAuthStore();
+
+  const toggleCategory = (catName: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(catName)) next.delete(catName);
+      else next.add(catName);
+      return next;
+    });
+  };
   const isClient = hasRole('CLIENT');
 
   const {
@@ -114,11 +127,14 @@ export function ProductsPage() {
                   ([catName, products]) => (
                     <Fragment key={catName}>
                       {/* Заголовок категории */}
-                      <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                      <TableRow
+                        sx={{ backgroundColor: 'action.hover', cursor: 'pointer' }}
+                        onClick={() => toggleCategory(catName)}
+                      >
                         <TableCell
                           colSpan={isClient ? 7 : 4}
                           sx={{
-                            py: 0.75,
+                            py: 0.5,
                             fontWeight: 700,
                             fontSize: '0.8rem',
                             color: 'text.secondary',
@@ -126,14 +142,27 @@ export function ProductsPage() {
                             textTransform: 'uppercase',
                           }}
                         >
-                          {catName}
+                          <Stack direction="row" alignItems="center" spacing={0.5}>
+                            <IconButton size="small" sx={{ p: 0.25 }}>
+                              {collapsed.has(catName) ? (
+                                <ExpandMoreIcon fontSize="small" />
+                              ) : (
+                                <ExpandLessIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                            <span>{catName}</span>
+                            <Typography variant="caption" color="text.disabled" sx={{ ml: 0.5 }}>
+                              ({products.length})
+                            </Typography>
+                          </Stack>
                         </TableCell>
                       </TableRow>
 
                       {/* Строки товаров */}
-                      {products.map((product) => (
-                        <ProductRow key={product.id} product={product} />
-                      ))}
+                      {!collapsed.has(catName) &&
+                        products.map((product) => (
+                          <ProductRow key={product.id} product={product} />
+                        ))}
                     </Fragment>
                   ),
                 )}

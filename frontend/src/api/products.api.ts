@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Product, ProductsResponse, Category } from '@/types/product.types';
+import type { Product, ProductsResponse } from '@/types/product.types';
 
 export interface GetProductsParams {
   page?: number;
@@ -16,9 +16,9 @@ export const productsApi = {
     return data;
   },
 
-  getCategories: async (): Promise<Category[]> => {
-    const { data } = await apiClient.get<Category[]>('/api/categories');
-    return data;
+  getCategories: async (): Promise<string[]> => {
+    const { data } = await apiClient.get<{ data: string[] }>('/api/products/categories');
+    return data.data;
   },
 
   getProduct: async (id: string): Promise<Product> => {

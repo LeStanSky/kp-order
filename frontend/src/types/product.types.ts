@@ -8,16 +8,11 @@ export interface Price {
   priceGroup: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-}
-
 export interface Product {
   id: string;
   name: string;
   description?: string;
-  category?: Category;
+  category?: string;
   unit?: string;
   imageUrl?: string;
   isActive: boolean;

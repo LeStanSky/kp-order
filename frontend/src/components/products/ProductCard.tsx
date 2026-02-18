@@ -32,7 +32,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </Typography>
 
-        {product.category && <Chip label={product.category.name} size="small" sx={{ mb: 1 }} />}
+        {product.category && <Chip label={product.category} size="small" sx={{ mb: 1 }} />}
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
           Остаток: {product.stock} {product.unit ?? 'шт'}

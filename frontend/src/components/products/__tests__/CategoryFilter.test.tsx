@@ -3,12 +3,8 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils';
 import { CategoryFilter } from '../CategoryFilter';
-import type { Category } from '@/types/product.types';
 
-const categories: Category[] = [
-  { id: '1', name: 'Молочные' },
-  { id: '2', name: 'Мясные' },
-];
+const categories: string[] = ['Молочные', 'Мясные'];
 
 describe('CategoryFilter', () => {
   it('renders all categories plus "All" option', () => {
@@ -20,19 +16,19 @@ describe('CategoryFilter', () => {
     expect(screen.getByText('Мясные')).toBeInTheDocument();
   });
 
-  it('calls onChange with category id when clicking a category', async () => {
+  it('calls onChange with category name when clicking a category', async () => {
     const onChange = vi.fn();
     renderWithProviders(
       <CategoryFilter categories={categories} selected={null} onChange={onChange} />,
     );
     await userEvent.click(screen.getByText('Молочные'));
-    expect(onChange).toHaveBeenCalledWith('1');
+    expect(onChange).toHaveBeenCalledWith('Молочные');
   });
 
   it('calls onChange with null when clicking "All"', async () => {
     const onChange = vi.fn();
     renderWithProviders(
-      <CategoryFilter categories={categories} selected="1" onChange={onChange} />,
+      <CategoryFilter categories={categories} selected="Молочные" onChange={onChange} />,
     );
     await userEvent.click(screen.getByText(/все|all/i));
     expect(onChange).toHaveBeenCalledWith(null);

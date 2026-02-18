@@ -1,8 +1,7 @@
 import { Box, Chip } from '@mui/material';
-import type { Category } from '@/types/product.types';
 
 interface CategoryFilterProps {
-  categories: Category[];
+  categories: string[];
   selected: string | null;
   onChange: (category: string | null) => void;
 }
@@ -18,11 +17,11 @@ export function CategoryFilter({ categories, selected, onChange }: CategoryFilte
       />
       {categories.map((cat) => (
         <Chip
-          key={cat.id}
-          label={cat.name}
-          onClick={() => onChange(cat.id)}
-          color={selected === cat.id ? 'primary' : 'default'}
-          variant={selected === cat.id ? 'filled' : 'outlined'}
+          key={cat}
+          label={cat}
+          onClick={() => onChange(cat)}
+          color={selected === cat ? 'primary' : 'default'}
+          variant={selected === cat ? 'filled' : 'outlined'}
         />
       ))}
     </Box>

@@ -19,6 +19,7 @@ const mockProducts = {
     {
       id: 'p1',
       name: 'Молоко',
+      category: 'Молочные',
       isActive: true,
       stock: 5,
       prices: [{ value: 100, currency: 'RUB', priceGroup: 'Розница' }],
@@ -26,6 +27,7 @@ const mockProducts = {
     {
       id: 'p2',
       name: 'Кефир',
+      category: 'Молочные',
       isActive: true,
       stock: 3,
       prices: [{ value: 80, currency: 'RUB', priceGroup: 'Розница' }],
@@ -34,7 +36,7 @@ const mockProducts = {
   pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
 };
 
-const mockCategories = [{ id: 'c1', name: 'Молочные' }];
+const mockCategories = ['Молочные'];
 
 beforeEach(async () => {
   useAuthStore.getState().clearAuth();
@@ -66,7 +68,7 @@ describe('ProductsPage', () => {
   it('renders category filter', async () => {
     renderWithProviders(<ProductsPage />);
     await waitFor(() => {
-      expect(screen.getByText('Молочные')).toBeInTheDocument();
+      expect(screen.getAllByText('Молочные').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -88,12 +90,47 @@ describe('ProductsPage', () => {
     expect(container.querySelectorAll('.MuiSkeleton-root').length).toBeGreaterThan(0);
   });
 
-  it('updates filter when category is selected', async () => {
+  it('updates filter when category chip is selected', async () => {
     renderWithProviders(<ProductsPage />);
-    await userEvent.click(screen.getByText('Молочные'));
+    // Click the chip in CategoryFilter (first occurrence)
+    const chips = screen.getAllByText('Молочные');
+    await userEvent.click(chips[0]);
     const { useProducts } = await import('@/hooks/useProducts');
     await waitFor(() => {
       expect(vi.mocked(useProducts)).toHaveBeenCalled();
+    });
+  });
+
+  it('collapses category when header row is clicked', async () => {
+    renderWithProviders(<ProductsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Молоко')).toBeInTheDocument();
+    });
+    // Click the category header row (second occurrence of "Молочные" — in table)
+    const headers = screen.getAllByText('Молочные');
+    await userEvent.click(headers[headers.length - 1]);
+    await waitFor(() => {
+      expect(screen.queryByText('Молоко')).not.toBeInTheDocument();
+      expect(screen.queryByText('Кефир')).not.toBeInTheDocument();
+    });
+  });
+
+  it('expands category again after second click', async () => {
+    renderWithProviders(<ProductsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Молоко')).toBeInTheDocument();
+    });
+    const headers = screen.getAllByText('Молочные');
+    // Collapse
+    await userEvent.click(headers[headers.length - 1]);
+    await waitFor(() => {
+      expect(screen.queryByText('Молоко')).not.toBeInTheDocument();
+    });
+    // Expand
+    const headersAfter = screen.getAllByText('Молочные');
+    await userEvent.click(headersAfter[headersAfter.length - 1]);
+    await waitFor(() => {
+      expect(screen.getByText('Молоко')).toBeInTheDocument();
     });
   });
 });
