@@ -1,25 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-vi.mock('axios', async (importOriginal) => {
-  const actual = await importOriginal<typeof axios>();
-  return {
-    default: {
-      ...actual.default,
-      create: vi.fn(() => ({
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-        get: vi.fn(),
-        post: vi.fn(),
-        patch: vi.fn(),
-        delete: vi.fn(),
-      })),
-    },
-  };
-});
+vi.mock('axios', () => ({
+  default: {
+    create: vi.fn(() => ({
+      interceptors: {
+        request: { use: vi.fn() },
+        response: { use: vi.fn() },
+      },
+      get: vi.fn(),
+      post: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    })),
+    defaults: {},
+  },
+}));
 
 describe('api client', () => {
   beforeEach(() => {
@@ -43,13 +39,13 @@ describe('api client', () => {
     const { addAuthHeader } = await import('../client');
     const config = { headers: {} as Record<string, string> };
     const result = addAuthHeader(config);
-    expect(result.headers['Authorization']).toBe('Bearer test-token');
+    expect(result.headers!['Authorization']).toBe('Bearer test-token');
   });
 
   it('request interceptor does not add header when no token', async () => {
     const { addAuthHeader } = await import('../client');
     const config = { headers: {} as Record<string, string> };
     const result = addAuthHeader(config);
-    expect(result.headers['Authorization']).toBeUndefined();
+    expect(result.headers!['Authorization']).toBeUndefined();
   });
 });

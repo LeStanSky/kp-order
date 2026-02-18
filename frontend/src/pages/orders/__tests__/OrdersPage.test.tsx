@@ -39,7 +39,7 @@ beforeEach(async () => {
     data: mockOrders,
     isLoading: false,
     error: null,
-  } as ReturnType<typeof useOrders>);
+  } as unknown as ReturnType<typeof useOrders>);
 });
 
 describe('OrdersPage', () => {
@@ -63,7 +63,7 @@ describe('OrdersPage', () => {
       data: { data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } },
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useOrders>);
+    } as unknown as ReturnType<typeof useOrders>);
 
     renderWithProviders(<OrdersPage />);
     await waitFor(() => {
