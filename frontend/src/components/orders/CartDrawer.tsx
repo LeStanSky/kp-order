@@ -23,7 +23,7 @@ interface CartDrawerProps {
 
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
   const navigate = useNavigate();
-  const { items, updateQuantity, removeItem, totalAmount } = useCartStore();
+  const { items, updateQuantity, removeItem, clearCart, totalAmount } = useCartStore();
 
   const handleCheckout = () => {
     onClose();
@@ -44,9 +44,16 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
       <Box sx={{ width: 360, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6">Корзина</Typography>
-          <IconButton onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            {items.length > 0 && (
+              <Button size="small" color="error" onClick={clearCart}>
+                Очистить
+              </Button>
+            )}
+            <IconButton onClick={onClose} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Stack>
         </Box>
         <Divider />
 

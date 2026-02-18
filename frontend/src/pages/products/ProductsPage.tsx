@@ -40,7 +40,11 @@ export function ProductsPage() {
   const { hasRole } = useAuthStore();
   const isClient = hasRole('CLIENT');
 
-  const { data: productsData, isLoading } = useProducts({
+  const {
+    data: productsData,
+    isLoading,
+    error,
+  } = useProducts({
     page,
     limit: PAGE_SIZE,
     search: search || undefined,
@@ -79,7 +83,11 @@ export function ProductsPage() {
             <Skeleton key={i} variant="rectangular" height={44} sx={{ mb: 1, borderRadius: 1 }} />
           ))}
         </Box>
-      ) : !grouped || productsData?.data.length === 0 ? (
+      ) : error ? (
+        <Typography color="error">
+          Не удалось загрузить товары. Проверьте подключение к серверу.
+        </Typography>
+      ) : productsData?.data.length === 0 ? (
         <Typography color="text.secondary">Товары не найдены</Typography>
       ) : (
         <>
@@ -102,31 +110,33 @@ export function ProductsPage() {
               </TableHead>
 
               <TableBody>
-                {Array.from(grouped.entries()).map(([catName, products]) => (
-                  <Fragment key={catName}>
-                    {/* Заголовок категории */}
-                    <TableRow sx={{ backgroundColor: 'action.hover' }}>
-                      <TableCell
-                        colSpan={isClient ? 7 : 4}
-                        sx={{
-                          py: 0.75,
-                          fontWeight: 700,
-                          fontSize: '0.8rem',
-                          color: 'text.secondary',
-                          letterSpacing: 0.5,
-                          textTransform: 'uppercase',
-                        }}
-                      >
-                        {catName}
-                      </TableCell>
-                    </TableRow>
+                {Array.from((grouped ?? new Map<string, Product[]>()).entries()).map(
+                  ([catName, products]) => (
+                    <Fragment key={catName}>
+                      {/* Заголовок категории */}
+                      <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                        <TableCell
+                          colSpan={isClient ? 7 : 4}
+                          sx={{
+                            py: 0.75,
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            color: 'text.secondary',
+                            letterSpacing: 0.5,
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {catName}
+                        </TableCell>
+                      </TableRow>
 
-                    {/* Строки товаров */}
-                    {products.map((product) => (
-                      <ProductRow key={product.id} product={product} />
-                    ))}
-                  </Fragment>
-                ))}
+                      {/* Строки товаров */}
+                      {products.map((product) => (
+                        <ProductRow key={product.id} product={product} />
+                      ))}
+                    </Fragment>
+                  ),
+                )}
               </TableBody>
             </Table>
           </TableContainer>
