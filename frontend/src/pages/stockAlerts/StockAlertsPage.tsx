@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import toast from 'react-hot-toast';
 import {
   useStockAlerts,
   useCreateStockAlert,
@@ -57,7 +58,16 @@ export function StockAlertsPage() {
     if (!newProductId || newMinStock === '') return;
     createAlert.mutate(
       { productId: newProductId, minStock: Number(newMinStock) },
-      { onSuccess: () => setDialogOpen(false) },
+      {
+        onSuccess: () => {
+          setDialogOpen(false);
+          toast.success('Оповещение добавлено');
+        },
+        onError: (err: any) => {
+          const message = err?.response?.data?.message ?? 'Ошибка при создании оповещения';
+          toast.error(message);
+        },
+      },
     );
   };
 
@@ -166,7 +176,7 @@ export function StockAlertsPage() {
             value={newMinStock}
             onChange={(e) => setNewMinStock(e.target.value)}
             fullWidth
-            inputProps={{ min: 0 }}
+            inputProps={{ min: 0, step: 1 }}
           />
         </DialogContent>
         <DialogActions>
@@ -174,9 +184,9 @@ export function StockAlertsPage() {
           <Button
             variant="contained"
             onClick={handleCreate}
-            disabled={!newProductId || newMinStock === ''}
+            disabled={!newProductId || newMinStock === '' || createAlert.isPending}
           >
-            Добавить
+            {createAlert.isPending ? 'Сохранение...' : 'Добавить'}
           </Button>
         </DialogActions>
       </Dialog>
