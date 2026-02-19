@@ -9,59 +9,18 @@ import {
   Typography,
 } from '@mui/material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
-import type { Product, Price } from '@/types/product.types';
+import type { Product } from '@/types/product.types';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { ExpiryBadge } from './ExpiryBadge';
+import { resolveDisplayName, resolveStock, resolvePrice } from '@/utils/productDisplay';
 
 interface ProductRowProps {
   product: Product;
+  onOpen?: () => void;
 }
 
-/**
- * Для дкл-товаров (KEG) убирает "PET KEG" и "розлив" из отображаемого названия.
- */
-function resolveDisplayName(name: string, unit: string | undefined): string {
-  if (unit !== 'дкл') return name;
-  return name
-    .replace(/\bPET\s+KEG\b\s*/gi, '')
-    .replace(/розлив\s*/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-/**
- * Для товаров группы РОЗЛИВ (единица — дкл) вычисляет отображаемый остаток в штуках.
- * Объём тары определяется из названия: 10 л → 1 дкл, 20 л → 2 дкл, 30 л → 3 дкл.
- * Остаток в штуках = stock_в_дкл / дкл_на_штуку.
- * Если объём не найден в названии — возвращает исходные значения.
- */
-function resolveStock(name: string, stock: number, unit: string | undefined) {
-  if (unit === 'дкл') {
-    const match = name.match(/(?<!\d)(10|20|30)\s*л/i);
-    if (match) {
-      const factor = parseInt(match[1], 10) / 10; // 10→1, 20→2, 30→3
-      return { value: Math.floor(stock / factor), unit: 'шт' };
-    }
-  }
-  return { value: stock, unit: unit ?? 'шт' };
-}
-
-/**
- * Для KEG-товаров (дкл) пересчитывает цену за 10л → цену за весь кег.
- * Фактор = volume_л / 10: 20л → ×2, 30л → ×3.
- * Для остальных возвращает цену без изменений.
- */
-function resolvePrice(prices: Price[], name: string, unit: string | undefined): Price | null {
-  const price = prices[0] ?? null;
-  if (!price || unit !== 'дкл') return price;
-  const match = name.match(/(?<!\d)(10|20|30)\s*л/i);
-  if (!match) return price;
-  const factor = parseInt(match[1], 10) / 10;
-  return { ...price, value: Math.round(price.value * factor * 100) / 100 };
-}
-
-export function ProductRow({ product }: ProductRowProps) {
+export function ProductRow({ product, onOpen }: ProductRowProps) {
   const { hasRole } = useAuthStore();
   const { items, addItem, updateQuantity } = useCartStore();
   const [inputQty, setInputQty] = useState(1);
@@ -99,7 +58,12 @@ export function ProductRow({ product }: ProductRowProps) {
     >
       {/* Название + срок годности (только для MANAGER/ADMIN) */}
       <TableCell>
-        <Typography variant="body2" fontWeight={500}>
+        <Typography
+          variant="body2"
+          fontWeight={500}
+          onClick={onOpen}
+          sx={onOpen ? { cursor: 'pointer', '&:hover': { color: 'primary.main' } } : undefined}
+        >
           {displayName}
         </Typography>
         {!isClient && product.expiryStatus && <ExpiryBadge expiryStatus={product.expiryStatus} />}

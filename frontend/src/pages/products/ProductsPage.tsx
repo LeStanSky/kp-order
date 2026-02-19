@@ -18,6 +18,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useProducts, useCategories } from '@/hooks/useProducts';
 import { ProductRow } from '@/components/products/ProductRow';
+import { ProductDetailModal } from '@/components/products/ProductDetailModal';
 import { CategoryFilter } from '@/components/products/CategoryFilter';
 import { SearchBar } from '@/components/products/SearchBar';
 import { useAuthStore } from '@/store/authStore';
@@ -41,6 +42,7 @@ export function ProductsPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { hasRole } = useAuthStore();
 
   const toggleCategory = (catName: string) => {
@@ -161,7 +163,11 @@ export function ProductsPage() {
                       {/* Строки товаров */}
                       {!collapsed.has(catName) &&
                         products.map((product) => (
-                          <ProductRow key={product.id} product={product} />
+                          <ProductRow
+                            key={product.id}
+                            product={product}
+                            onOpen={() => setSelectedProduct(product)}
+                          />
                         ))}
                     </Fragment>
                   ),
@@ -182,6 +188,8 @@ export function ProductsPage() {
           )}
         </>
       )}
+
+      <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
     </Box>
   );
 }
