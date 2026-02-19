@@ -1,5 +1,10 @@
 import type { Price } from '@/types/product.types';
 
+/** Форматирует число как цену с ровно 2 знаками после запятой. */
+export function formatPrice(value: number): string {
+  return (Math.round(value * 100) / 100).toFixed(2);
+}
+
 /**
  * Для дкл-товаров (KEG) убирает "PET KEG" и "розлив" из отображаемого названия.
  */

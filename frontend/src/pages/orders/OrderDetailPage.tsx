@@ -19,6 +19,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useOrder, useCancelOrder, useRepeatOrder } from '@/hooks/useOrders';
+import { formatPrice } from '@/utils/productDisplay';
 import { OrderStatusChip } from '@/components/orders/OrderStatusChip';
 import { useAuthStore } from '@/store/authStore';
 
@@ -107,11 +108,11 @@ export function OrderDetailPage() {
               <TableRow key={item.id}>
                 <TableCell>{item.product.name}</TableCell>
                 <TableCell align="right">
-                  {item.price} {item.currency}
+                  {formatPrice(item.price)} {item.currency}
                 </TableCell>
                 <TableCell align="right">{item.quantity}</TableCell>
                 <TableCell align="right">
-                  {item.price * item.quantity} {item.currency}
+                  {formatPrice(item.price * item.quantity)} {item.currency}
                 </TableCell>
               </TableRow>
             ))}
@@ -120,7 +121,7 @@ export function OrderDetailPage() {
                 <Typography fontWeight="bold">Итого</Typography>
               </TableCell>
               <TableCell align="right">
-                <Typography fontWeight="bold">{order.totalAmount} RUB</Typography>
+                <Typography fontWeight="bold">{formatPrice(order.totalAmount)} RUB</Typography>
               </TableCell>
             </TableRow>
           </TableBody>

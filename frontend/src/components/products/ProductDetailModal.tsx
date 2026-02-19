@@ -24,7 +24,12 @@ import type { Product } from '@/types/product.types';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { productsApi } from '@/api/products.api';
-import { resolveDisplayName, resolveStock, resolvePrice } from '@/utils/productDisplay';
+import {
+  resolveDisplayName,
+  resolveStock,
+  resolvePrice,
+  formatPrice,
+} from '@/utils/productDisplay';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -203,7 +208,7 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
               </Typography>
               {displayPrice && (
                 <Typography variant="body1" fontWeight={600}>
-                  {displayPrice.value} {displayPrice.currency}
+                  {formatPrice(displayPrice.value)} {displayPrice.currency}
                 </Typography>
               )}
             </Stack>

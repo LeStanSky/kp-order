@@ -144,7 +144,7 @@ describe('ProductRow — цена KEG (дкл × объём)', () => {
         prices: [{ value: 200, currency: 'RUB', priceGroup: 'Прайс основной' }],
       }),
     );
-    expect(screen.getByText('200 RUB')).toBeInTheDocument();
+    expect(screen.getByText('200.00 RUB')).toBeInTheDocument();
   });
 
   it('умножает цену ×2 для 20л кега', () => {
@@ -156,7 +156,7 @@ describe('ProductRow — цена KEG (дкл × объём)', () => {
         prices: [{ value: 1800, currency: 'RUB', priceGroup: 'Прайс основной' }],
       }),
     );
-    expect(screen.getByText('3600 RUB')).toBeInTheDocument();
+    expect(screen.getByText('3600.00 RUB')).toBeInTheDocument();
   });
 
   it('умножает цену ×3 для 30л кега', () => {
@@ -168,7 +168,7 @@ describe('ProductRow — цена KEG (дкл × объём)', () => {
         prices: [{ value: 2000, currency: 'RUB', priceGroup: 'Прайс основной' }],
       }),
     );
-    expect(screen.getByText('6000 RUB')).toBeInTheDocument();
+    expect(screen.getByText('6000.00 RUB')).toBeInTheDocument();
   });
 
   it('умножает цену ×1 для 10л кега', () => {
@@ -180,7 +180,7 @@ describe('ProductRow — цена KEG (дкл × объём)', () => {
         prices: [{ value: 1000, currency: 'RUB', priceGroup: 'Прайс основной' }],
       }),
     );
-    expect(screen.getByText('1000 RUB')).toBeInTheDocument();
+    expect(screen.getByText('1000.00 RUB')).toBeInTheDocument();
   });
 
   it('показывает исходную цену для дкл без объёма в названии', () => {
@@ -192,6 +192,6 @@ describe('ProductRow — цена KEG (дкл × объём)', () => {
         prices: [{ value: 1500, currency: 'RUB', priceGroup: 'Прайс основной' }],
       }),
     );
-    expect(screen.getByText('1500 RUB')).toBeInTheDocument();
+    expect(screen.getByText('1500.00 RUB')).toBeInTheDocument();
   });
 });

@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import { useOrders } from '@/hooks/useOrders';
+import { formatPrice } from '@/utils/productDisplay';
 import { OrderStatusChip } from '@/components/orders/OrderStatusChip';
 import { useAuthStore } from '@/store/authStore';
 import type { OrderStatus } from '@/types/order.types';
@@ -85,7 +86,7 @@ export function OrdersPage() {
                       {format(new Date(order.createdAt), 'dd.MM.yyyy HH:mm')}
                     </Typography>
                     <Typography variant="body1" sx={{ mt: 1 }}>
-                      Итого: {order.totalAmount} RUB
+                      Итого: {formatPrice(order.totalAmount)} RUB
                     </Typography>
                     {isManager && (
                       <Typography variant="body2" color="text.secondary">

@@ -23,6 +23,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import toast from 'react-hot-toast';
 import { useCartStore } from '@/store/cartStore';
 import { ordersApi } from '@/api/orders.api';
+import { formatPrice } from '@/utils/productDisplay';
 
 interface CommentForm {
   comment: string;
@@ -91,7 +92,7 @@ export function CartPage() {
               <TableRow key={item.productId}>
                 <TableCell>{item.name}</TableCell>
                 <TableCell align="right">
-                  {item.price} {item.currency}
+                  {formatPrice(item.price)} {item.currency}
                 </TableCell>
                 <TableCell align="center">
                   <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
@@ -113,7 +114,7 @@ export function CartPage() {
                   </Stack>
                 </TableCell>
                 <TableCell align="right">
-                  {item.price * item.quantity} {item.currency}
+                  {formatPrice(item.price * item.quantity)} {item.currency}
                 </TableCell>
                 <TableCell align="center">
                   <IconButton size="small" color="error" onClick={() => removeItem(item.productId)}>
@@ -127,7 +128,7 @@ export function CartPage() {
                 <Typography fontWeight="bold">Итого</Typography>
               </TableCell>
               <TableCell align="right">
-                <Typography fontWeight="bold">{totalAmount()} RUB</Typography>
+                <Typography fontWeight="bold">{formatPrice(totalAmount())} RUB</Typography>
               </TableCell>
               <TableCell />
             </TableRow>

@@ -13,7 +13,12 @@ import type { Product } from '@/types/product.types';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { ExpiryBadge } from './ExpiryBadge';
-import { resolveDisplayName, resolveStock, resolvePrice } from '@/utils/productDisplay';
+import {
+  resolveDisplayName,
+  resolveStock,
+  resolvePrice,
+  formatPrice,
+} from '@/utils/productDisplay';
 
 interface ProductRowProps {
   product: Product;
@@ -91,7 +96,7 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
       <TableCell align="right">
         {displayPrice ? (
           <Typography variant="body2" fontWeight={500}>
-            {displayPrice.value} {displayPrice.currency}
+            {formatPrice(displayPrice.value)} {displayPrice.currency}
           </Typography>
         ) : (
           <Typography variant="body2" color="text.secondary">

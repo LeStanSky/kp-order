@@ -15,6 +15,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCartStore } from '@/store/cartStore';
+import { formatPrice } from '@/utils/productDisplay';
 
 interface CartDrawerProps {
   open: boolean;
@@ -71,7 +72,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
                 >
                   <Typography variant="body1">{item.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {item.price} {item.currency}
+                    {formatPrice(item.price)} {item.currency}
                   </Typography>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
                     <IconButton
@@ -104,7 +105,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
             <Divider />
             <Box sx={{ p: 2 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
-                Итого: {totalAmount()} RUB
+                Итого: {formatPrice(totalAmount())} RUB
               </Typography>
               <Button variant="contained" fullWidth onClick={handleCheckout}>
                 Оформить заказ
