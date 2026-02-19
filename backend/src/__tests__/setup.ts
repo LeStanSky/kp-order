@@ -39,6 +39,17 @@ jest.mock('../config/database', () => {
     orderItem: {
       findMany: jest.fn(),
     },
+    stockAlert: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+    },
+    stockAlertHistory: {
+      create: jest.fn(),
+    },
     $transaction: jest.fn(),
     $connect: jest.fn(),
     $disconnect: jest.fn(),

@@ -36,6 +36,7 @@ model User {
   clients       User[]         @relation("ManagerClients")
   refreshTokens RefreshToken[]
   orders        Order[]
+  createdAlerts StockAlert[]   @relation("AlertCreator")
 
   @@map("users")
 }
@@ -90,9 +91,10 @@ model Product {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  stocks     Stock[]
-  prices     Price[]
-  orderItems OrderItem[]
+  stocks      Stock[]
+  prices      Price[]
+  orderItems  OrderItem[]
+  stockAlerts StockAlert[]
 
   @@index([cleanName])
   @@index([expiryDate])
@@ -158,4 +160,30 @@ model OrderItem {
   product Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+model StockAlert {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdById String   @map("created_by_id")
+  createdBy   User     @relation("AlertCreator", fields: [createdById], references: [id])
+  minStock    Int      @map("min_stock")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  history     StockAlertHistory[]
+
+  @@unique([productId, createdById])
+  @@map("stock_alerts")
+}
+
+model StockAlertHistory {
+  id           String     @id @default(uuid())
+  stockAlertId String     @map("stock_alert_id")
+  stockAlert   StockAlert @relation(fields: [stockAlertId], references: [id], onDelete: Cascade)
+  stockValue   Float      @map("stock_value")
+  sentAt       DateTime   @default(now()) @map("sent_at")
+
+  @@map("stock_alert_history")
 }

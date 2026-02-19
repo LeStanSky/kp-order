@@ -13,6 +13,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 
@@ -30,6 +31,7 @@ export function Header() {
   const isClient = hasRole('CLIENT');
   const onProducts = location.pathname === '/products';
   const onOrders = location.pathname.startsWith('/orders');
+  const onAlerts = location.pathname === '/stock-alerts';
 
   return (
     <AppBar position="static">
@@ -71,6 +73,22 @@ export function Header() {
         >
           Заказы
         </Button>
+
+        {!isClient && (
+          <Button
+            color="inherit"
+            startIcon={<NotificationsIcon />}
+            onClick={() => navigate('/stock-alerts')}
+            sx={{
+              fontWeight: onAlerts ? 700 : 400,
+              borderBottom: onAlerts ? '2px solid white' : '2px solid transparent',
+              borderRadius: 0,
+              pb: 0.5,
+            }}
+          >
+            Оповещения
+          </Button>
+        )}
 
         <Box sx={{ flexGrow: 1 }} />
 

@@ -12,6 +12,7 @@ import { ProductsPage } from '@/pages/products/ProductsPage';
 import { CartPage } from '@/pages/orders/CartPage';
 import { OrdersPage } from '@/pages/orders/OrdersPage';
 import { OrderDetailPage } from '@/pages/orders/OrderDetailPage';
+import { StockAlertsPage } from '@/pages/stockAlerts/StockAlertsPage';
 import { useAuthStore } from '@/store/authStore';
 
 const queryClient = new QueryClient({
@@ -88,6 +89,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <OrderDetailPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/stock-alerts"
+              element={
+                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+                  <AppLayout>
+                    <StockAlertsPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

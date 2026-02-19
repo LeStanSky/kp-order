@@ -3,12 +3,14 @@ import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { connectRedis, disconnectRedis } from './config/redis';
 import { setupProductSync, stopProductSync } from './jobs/syncProducts.job';
+import { setupStockAlerts, stopStockAlerts } from './jobs/stockAlerts.job';
 import { logger } from './utils/logger';
 
 async function bootstrap() {
   await connectDatabase();
   await connectRedis();
   setupProductSync();
+  setupStockAlerts();
 
   const server = app.listen(env.PORT, () => {
     logger.info(`Server running on http://localhost:${env.PORT} [${env.NODE_ENV}]`);
@@ -18,6 +20,7 @@ async function bootstrap() {
     logger.info(`${signal} received, shutting down...`);
     server.close();
     await stopProductSync();
+    await stopStockAlerts();
     await disconnectRedis();
     await disconnectDatabase();
     process.exit(0);

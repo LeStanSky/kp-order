@@ -61,4 +61,30 @@ export const emailService = {
       });
     }
   },
+
+  async sendStockAlertNotification(data: {
+    recipientEmail: string;
+    productName: string;
+    currentStock: number;
+    minStock: number;
+  }): Promise<void> {
+    try {
+      await transporter.sendMail({
+        from: env.SMTP_FROM,
+        to: data.recipientEmail,
+        subject: `Низкий остаток: ${data.productName}`,
+        html: `
+          <h2>Низкий остаток товара</h2>
+          <p><strong>Товар:</strong> ${data.productName}</p>
+          <p><strong>Текущий остаток:</strong> ${data.currentStock}</p>
+          <p><strong>Минимальный порог:</strong> ${data.minStock}</p>
+        `,
+      });
+    } catch (error) {
+      logger.error('Failed to send stock alert notification', {
+        productName: data.productName,
+        error: (error as Error).message,
+      });
+    }
+  },
 };
