@@ -108,7 +108,7 @@ const MOCK_PRODUCTS: ERPProduct[] = [
   },
   {
     id: 'mock-013',
-    name: 'Jaws Розлив Weizen алк.5,1%',
+    name: 'Jaws Weizen алк.5,1% PET KEG 20 л.',
     category: 'Jaws Розлив',
     unit: 'дкл',
     salePrices: makePrices(1800),
@@ -122,7 +122,7 @@ const MOCK_PRODUCTS: ERPProduct[] = [
   },
   {
     id: 'mock-015',
-    name: 'Ostrovica розлив APA алк.5,5%',
+    name: 'Ostrovica APA алк.5,5% PET KEG 30 л.',
     category: 'Ostrovica розлив',
     unit: 'дкл',
     salePrices: makePrices(2000),
@@ -190,9 +190,17 @@ const MOCK_STOCKS: ERPStock[] = [
     productName: 'Jaws Stout алк.7,0% об. 330мл / 2026-06-15 ЧЗ',
     quantity: 55,
   },
-  { productExternalId: 'mock-013', productName: 'Jaws Розлив Weizen алк.5,1%', quantity: 5.5 },
+  {
+    productExternalId: 'mock-013',
+    productName: 'Jaws Weizen алк.5,1% PET KEG 20 л. / 2026-08-15',
+    quantity: 6,
+  },
   { productExternalId: 'mock-014', productName: 'Чипсы крафтовые с паприкой 100г', quantity: 300 },
-  { productExternalId: 'mock-015', productName: 'Ostrovica розлив APA алк.5,5%', quantity: 3.2 },
+  {
+    productExternalId: 'mock-015',
+    productName: 'Ostrovica APA алк.5,5% PET KEG 30 л. / 2026-07-20',
+    quantity: 6,
+  },
 ];
 
 export class MockProvider implements IERPProvider {

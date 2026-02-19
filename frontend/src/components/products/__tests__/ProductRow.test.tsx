@@ -90,3 +90,108 @@ describe('ProductRow — РОЗЛИВ stock display (дкл → штуки)', ()
     expect(screen.getByText('дкл')).toBeInTheDocument();
   });
 });
+
+describe('ProductRow — скрытие слова "розлив" в названии', () => {
+  beforeEach(() => {
+    useAuthStore.getState().setAuth(clientUser, tokens);
+  });
+
+  it('убирает слово "Розлив" из названия для дкл-товара', () => {
+    renderRow(makeProduct({ name: 'Jaws Розлив 20 л', stock: 4, unit: 'дкл' }));
+    expect(screen.queryByText(/розлив/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Jaws 20 л')).toBeInTheDocument();
+  });
+
+  it('убирает "розлив" в нижнем регистре', () => {
+    renderRow(makeProduct({ name: 'Степь и Ветер розлив 30 л', stock: 3, unit: 'дкл' }));
+    expect(screen.queryByText(/розлив/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Степь и Ветер 30 л')).toBeInTheDocument();
+  });
+
+  it('не трогает название для не-дкл товара', () => {
+    renderRow(makeProduct({ name: 'Пиво Розлив бутылочный', stock: 5, unit: 'шт' }));
+    expect(screen.getByText('Пиво Розлив бутылочный')).toBeInTheDocument();
+  });
+});
+
+describe('ProductRow — скрытие "PET KEG" в названии', () => {
+  beforeEach(() => {
+    useAuthStore.getState().setAuth(clientUser, tokens);
+  });
+
+  it('убирает "PET KEG" из названия для дкл-товара', () => {
+    renderRow(makeProduct({ name: 'Jaws Weizen алк.5,1% PET KEG 20 л.', stock: 6, unit: 'дкл' }));
+    expect(screen.queryByText(/PET KEG/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Jaws Weizen алк.5,1% 20 л.')).toBeInTheDocument();
+  });
+
+  it('не трогает "PET KEG" для не-дкл товара', () => {
+    renderRow(makeProduct({ name: 'Пиво PET KEG бутылочное', stock: 5, unit: 'шт' }));
+    expect(screen.getByText('Пиво PET KEG бутылочное')).toBeInTheDocument();
+  });
+});
+
+describe('ProductRow — цена KEG (дкл × объём)', () => {
+  beforeEach(() => {
+    useAuthStore.getState().setAuth(clientUser, tokens);
+  });
+
+  it('не пересчитывает цену для шт-товара', () => {
+    renderRow(
+      makeProduct({
+        name: 'Пиво 500мл',
+        unit: 'шт',
+        prices: [{ value: 200, currency: 'RUB', priceGroup: 'Прайс основной' }],
+      }),
+    );
+    expect(screen.getByText('200 RUB')).toBeInTheDocument();
+  });
+
+  it('умножает цену ×2 для 20л кега', () => {
+    renderRow(
+      makeProduct({
+        name: 'Jaws Weizen PET KEG 20 л.',
+        unit: 'дкл',
+        stock: 6,
+        prices: [{ value: 1800, currency: 'RUB', priceGroup: 'Прайс основной' }],
+      }),
+    );
+    expect(screen.getByText('3600 RUB')).toBeInTheDocument();
+  });
+
+  it('умножает цену ×3 для 30л кега', () => {
+    renderRow(
+      makeProduct({
+        name: 'Ostrovica APA PET KEG 30 л.',
+        unit: 'дкл',
+        stock: 6,
+        prices: [{ value: 2000, currency: 'RUB', priceGroup: 'Прайс основной' }],
+      }),
+    );
+    expect(screen.getByText('6000 RUB')).toBeInTheDocument();
+  });
+
+  it('умножает цену ×1 для 10л кега', () => {
+    renderRow(
+      makeProduct({
+        name: 'Пиво Светлое PET KEG 10 л.',
+        unit: 'дкл',
+        stock: 4,
+        prices: [{ value: 1000, currency: 'RUB', priceGroup: 'Прайс основной' }],
+      }),
+    );
+    expect(screen.getByText('1000 RUB')).toBeInTheDocument();
+  });
+
+  it('показывает исходную цену для дкл без объёма в названии', () => {
+    renderRow(
+      makeProduct({
+        name: 'Пиво разливное',
+        unit: 'дкл',
+        stock: 5,
+        prices: [{ value: 1500, currency: 'RUB', priceGroup: 'Прайс основной' }],
+      }),
+    );
+    expect(screen.getByText('1500 RUB')).toBeInTheDocument();
+  });
+});

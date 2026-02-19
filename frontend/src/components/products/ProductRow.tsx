@@ -9,13 +9,25 @@ import {
   Typography,
 } from '@mui/material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
-import type { Product } from '@/types/product.types';
+import type { Product, Price } from '@/types/product.types';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { ExpiryBadge } from './ExpiryBadge';
 
 interface ProductRowProps {
   product: Product;
+}
+
+/**
+ * Для дкл-товаров (KEG) убирает "PET KEG" и "розлив" из отображаемого названия.
+ */
+function resolveDisplayName(name: string, unit: string | undefined): string {
+  if (unit !== 'дкл') return name;
+  return name
+    .replace(/\bPET\s+KEG\b\s*/gi, '')
+    .replace(/розлив\s*/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -35,6 +47,20 @@ function resolveStock(name: string, stock: number, unit: string | undefined) {
   return { value: stock, unit: unit ?? 'шт' };
 }
 
+/**
+ * Для KEG-товаров (дкл) пересчитывает цену за 10л → цену за весь кег.
+ * Фактор = volume_л / 10: 20л → ×2, 30л → ×3.
+ * Для остальных возвращает цену без изменений.
+ */
+function resolvePrice(prices: Price[], name: string, unit: string | undefined): Price | null {
+  const price = prices[0] ?? null;
+  if (!price || unit !== 'дкл') return price;
+  const match = name.match(/(?<!\d)(10|20|30)\s*л/i);
+  if (!match) return price;
+  const factor = parseInt(match[1], 10) / 10;
+  return { ...price, value: Math.round(price.value * factor * 100) / 100 };
+}
+
 export function ProductRow({ product }: ProductRowProps) {
   const { hasRole } = useAuthStore();
   const { items, addItem, updateQuantity } = useCartStore();
@@ -42,9 +68,10 @@ export function ProductRow({ product }: ProductRowProps) {
 
   const isClient = hasRole('CLIENT');
   const cartItem = items.find((i) => i.productId === product.id);
-  const price = product.prices[0];
 
+  const displayName = resolveDisplayName(product.name, product.unit);
   const displayStock = resolveStock(product.name, product.stock, product.unit);
+  const displayPrice = resolvePrice(product.prices, product.name, product.unit);
   const outOfStock = displayStock.value === 0;
 
   const handleAdd = () => {
@@ -54,9 +81,9 @@ export function ProductRow({ product }: ProductRowProps) {
     } else {
       addItem({
         productId: product.id,
-        name: product.name,
-        price: price?.value ?? 0,
-        currency: price?.currency ?? 'RUB',
+        name: displayName,
+        price: displayPrice?.value ?? 0,
+        currency: displayPrice?.currency ?? 'RUB',
         quantity: inputQty,
       });
     }
@@ -73,7 +100,7 @@ export function ProductRow({ product }: ProductRowProps) {
       {/* Название + срок годности (только для MANAGER/ADMIN) */}
       <TableCell>
         <Typography variant="body2" fontWeight={500}>
-          {product.name}
+          {displayName}
         </Typography>
         {!isClient && product.expiryStatus && <ExpiryBadge expiryStatus={product.expiryStatus} />}
       </TableCell>
@@ -98,9 +125,9 @@ export function ProductRow({ product }: ProductRowProps) {
 
       {/* Цена */}
       <TableCell align="right">
-        {price ? (
+        {displayPrice ? (
           <Typography variant="body2" fontWeight={500}>
-            {price.value} {price.currency}
+            {displayPrice.value} {displayPrice.currency}
           </Typography>
         ) : (
           <Typography variant="body2" color="text.secondary">

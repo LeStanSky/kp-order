@@ -92,8 +92,12 @@ async function syncProducts(_job: Job): Promise<ERPSyncResult> {
       });
       if (!product) continue;
 
-      // Parse expiry from stock product name
-      const { cleanName, expiryDate } = parseProductExpiry(stock.productName);
+      // Parse expiry from stock product name, then strip ERP-specific markers
+      const { cleanName: parsedCleanName, expiryDate } = parseProductExpiry(stock.productName);
+      const cleanName = parsedCleanName
+        .replace(/\bPET\s+KEG\b\s*/gi, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
 
       // Update product with parsed expiry and clean name from stock report
       await prisma.product.update({
