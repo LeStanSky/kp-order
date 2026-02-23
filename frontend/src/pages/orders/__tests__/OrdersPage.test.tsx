@@ -50,10 +50,11 @@ describe('OrdersPage', () => {
     });
   });
 
-  it('shows order status chip', async () => {
+  it('does not show order status', async () => {
     renderWithProviders(<OrdersPage />);
     await waitFor(() => {
-      expect(screen.getByText('Ожидает')).toBeInTheDocument();
+      expect(screen.queryByText('Ожидает')).not.toBeInTheDocument();
+      expect(screen.queryByText('PENDING')).not.toBeInTheDocument();
     });
   });
 

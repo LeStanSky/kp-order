@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils';
 import { OrderDetailPage } from '../OrderDetailPage';
 import { useAuthStore } from '@/store/authStore';
@@ -8,7 +7,6 @@ import type { User } from '@/types/user.types';
 
 vi.mock('@/hooks/useOrders', () => ({
   useOrder: vi.fn(),
-  useCancelOrder: vi.fn(),
   useRepeatOrder: vi.fn(),
 }));
 
@@ -54,16 +52,12 @@ beforeEach(async () => {
   useAuthStore.getState().setAuth(clientUser, tokens);
   vi.clearAllMocks();
 
-  const { useOrder, useCancelOrder, useRepeatOrder } = await import('@/hooks/useOrders');
+  const { useOrder, useRepeatOrder } = await import('@/hooks/useOrders');
   vi.mocked(useOrder).mockReturnValue({
     data: mockOrder,
     isLoading: false,
     error: null,
   } as ReturnType<typeof useOrder>);
-  vi.mocked(useCancelOrder).mockReturnValue({
-    mutate: vi.fn(),
-    isPending: false,
-  } as unknown as ReturnType<typeof useCancelOrder>);
   vi.mocked(useRepeatOrder).mockReturnValue({
     mutate: vi.fn(),
     isPending: false,
@@ -79,24 +73,11 @@ describe('OrderDetailPage', () => {
     });
   });
 
-  it('shows cancel button for PENDING order (CLIENT)', async () => {
+  it('does not show order status', async () => {
     renderWithProviders(<OrderDetailPage />);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /отменить|cancel/i })).toBeInTheDocument();
-    });
-  });
-
-  it('hides cancel button for CANCELLED order', async () => {
-    const { useOrder } = await import('@/hooks/useOrders');
-    vi.mocked(useOrder).mockReturnValue({
-      data: { ...mockOrder, status: 'CANCELLED' },
-      isLoading: false,
-      error: null,
-    } as ReturnType<typeof useOrder>);
-
-    renderWithProviders(<OrderDetailPage />);
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /отменить|cancel/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('Ожидает')).not.toBeInTheDocument();
+      expect(screen.queryByText('PENDING')).not.toBeInTheDocument();
     });
   });
 
@@ -107,16 +88,10 @@ describe('OrderDetailPage', () => {
     });
   });
 
-  it('calls cancelOrder mutation when cancel button clicked', async () => {
-    const { useCancelOrder } = await import('@/hooks/useOrders');
-    const mockMutate = vi.fn();
-    vi.mocked(useCancelOrder).mockReturnValue({
-      mutate: mockMutate,
-      isPending: false,
-    } as unknown as ReturnType<typeof useCancelOrder>);
-
+  it('does not show cancel button', async () => {
     renderWithProviders(<OrderDetailPage />);
-    await userEvent.click(screen.getByRole('button', { name: /отменить|cancel/i }));
-    expect(mockMutate).toHaveBeenCalledWith('order-1', expect.any(Object));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /отменить|cancel/i })).not.toBeInTheDocument();
+    });
   });
 });

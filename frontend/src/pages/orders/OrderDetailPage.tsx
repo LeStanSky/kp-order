@@ -18,29 +18,15 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { useOrder, useCancelOrder, useRepeatOrder } from '@/hooks/useOrders';
+import { useOrder, useRepeatOrder } from '@/hooks/useOrders';
 import { formatPrice } from '@/utils/productDisplay';
-import { OrderStatusChip } from '@/components/orders/OrderStatusChip';
-import { useAuthStore } from '@/store/authStore';
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { hasRole } = useAuthStore();
 
   const { data: order, isLoading } = useOrder(id ?? '');
-  const { mutate: cancelOrder, isPending: cancelling } = useCancelOrder();
   const { mutate: repeatOrder, isPending: repeating } = useRepeatOrder();
-
-  const isClient = hasRole('CLIENT');
-
-  const handleCancel = () => {
-    if (!order) return;
-    cancelOrder(order.id, {
-      onSuccess: () => toast.success('Заказ отменён'),
-      onError: () => toast.error('Не удалось отменить заказ'),
-    });
-  };
 
   const handleRepeat = () => {
     if (!order) return;
@@ -72,10 +58,9 @@ export function OrderDetailPage() {
         Назад к заказам
       </Button>
 
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h5">{order.orderNumber}</Typography>
-        <OrderStatusChip status={order.status} />
-      </Stack>
+      <Typography variant="h5" sx={{ mb: 3 }}>
+        {order.orderNumber}
+      </Typography>
 
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="body2" color="text.secondary">
@@ -128,18 +113,11 @@ export function OrderDetailPage() {
         </Table>
       </TableContainer>
 
-      {isClient && (
-        <Stack direction="row" spacing={2}>
-          {order.status === 'PENDING' && (
-            <Button variant="outlined" color="error" onClick={handleCancel} disabled={cancelling}>
-              {cancelling ? <CircularProgress size={20} /> : 'Отменить заказ'}
-            </Button>
-          )}
-          <Button variant="contained" onClick={handleRepeat} disabled={repeating}>
-            {repeating ? <CircularProgress size={20} /> : 'Повторить заказ'}
-          </Button>
-        </Stack>
-      )}
+      <Stack direction="row" spacing={2}>
+        <Button variant="contained" onClick={handleRepeat} disabled={repeating}>
+          {repeating ? <CircularProgress size={20} /> : 'Повторить заказ'}
+        </Button>
+      </Stack>
     </Box>
   );
 }
