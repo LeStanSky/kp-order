@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { ExpiryBadge } from './ExpiryBadge';
 import {
+  isKeg,
   resolveDisplayName,
   resolveStock,
   resolvePrice,
@@ -49,6 +50,7 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
         price: displayPrice?.value ?? 0,
         currency: displayPrice?.currency ?? 'RUB',
         quantity: inputQty,
+        isKeg: isKeg(product.name, product.unit),
       });
     }
   };

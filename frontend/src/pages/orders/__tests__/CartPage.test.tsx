@@ -34,6 +34,55 @@ beforeEach(() => {
 });
 
 describe('CartPage', () => {
+  it('shows order minimum warning when packaged total < 40', () => {
+    useCartStore
+      .getState()
+      .addItem({ productId: 'p1', name: 'Молоко', price: 100, currency: 'RUB', quantity: 5 });
+    renderWithProviders(<CartPage />);
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByText(/40/)).toBeInTheDocument();
+  });
+
+  it('shows per-item warning when non-KEG item qty < 3', () => {
+    useCartStore
+      .getState()
+      .addItem({ productId: 'p1', name: 'Молоко', price: 100, currency: 'RUB', quantity: 2 });
+    renderWithProviders(<CartPage />);
+    expect(screen.getAllByRole('alert').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/минимум 3/i)).toBeInTheDocument();
+  });
+
+  it('disables submit button when there are violations', () => {
+    useCartStore
+      .getState()
+      .addItem({ productId: 'p1', name: 'Молоко', price: 100, currency: 'RUB', quantity: 2 });
+    renderWithProviders(<CartPage />);
+    expect(screen.getByRole('button', { name: /подтвердить/i })).toBeDisabled();
+  });
+
+  it('enables submit button when cart is valid (KEG present)', () => {
+    useCartStore
+      .getState()
+      .addItem({
+        productId: 'k1',
+        name: 'Jaws PET KEG 20л',
+        price: 3600,
+        currency: 'RUB',
+        quantity: 1,
+        isKeg: true,
+      });
+    renderWithProviders(<CartPage />);
+    expect(screen.getByRole('button', { name: /подтвердить/i })).not.toBeDisabled();
+  });
+
+  it('enables submit button when packaged total >= 40', () => {
+    useCartStore
+      .getState()
+      .addItem({ productId: 'p1', name: 'Молоко', price: 100, currency: 'RUB', quantity: 40 });
+    renderWithProviders(<CartPage />);
+    expect(screen.getByRole('button', { name: /подтвердить/i })).not.toBeDisabled();
+  });
+
   it('redirects to /products when cart is empty', () => {
     renderWithProviders(<CartPage />);
     expect(mockNavigate).toHaveBeenCalledWith('/products');
@@ -42,7 +91,7 @@ describe('CartPage', () => {
   it('displays cart items', () => {
     useCartStore
       .getState()
-      .addItem({ productId: 'p1', name: 'Молоко', price: 100, currency: 'RUB', quantity: 2 });
+      .addItem({ productId: 'p1', name: 'Молоко', price: 100, currency: 'RUB', quantity: 40 });
     renderWithProviders(<CartPage />);
     expect(screen.getByText('Молоко')).toBeInTheDocument();
   });
@@ -50,7 +99,7 @@ describe('CartPage', () => {
   it('submits order and clears cart on success', async () => {
     useCartStore
       .getState()
-      .addItem({ productId: 'p1', name: 'Молоко', price: 100, currency: 'RUB', quantity: 2 });
+      .addItem({ productId: 'p1', name: 'Молоко', price: 100, currency: 'RUB', quantity: 40 });
     const { ordersApi } = await import('@/api/orders.api');
     vi.mocked(ordersApi.createOrder).mockResolvedValueOnce({
       id: 'order-1',

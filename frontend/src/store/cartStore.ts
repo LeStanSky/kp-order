@@ -7,6 +7,7 @@ export interface CartItem {
   price: number;
   currency: string;
   quantity: number;
+  isKeg?: boolean;
 }
 
 interface CartState {

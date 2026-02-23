@@ -47,4 +47,27 @@ describe('CartDrawer', () => {
     renderWithProviders(<CartDrawer open={true} onClose={vi.fn()} />);
     expect(screen.getByText(/пуст|empty/i)).toBeInTheDocument();
   });
+
+  it('shows warning when cart violates minimum order rules', () => {
+    useCartStore
+      .getState()
+      .addItem({ productId: 'p1', name: 'Молоко', price: 100, currency: 'RUB', quantity: 5 });
+    renderWithProviders(<CartDrawer open={true} onClose={vi.fn()} />);
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  it('shows no warning when cart has a KEG', () => {
+    useCartStore
+      .getState()
+      .addItem({
+        productId: 'k1',
+        name: 'Jaws PET KEG 20л',
+        price: 3600,
+        currency: 'RUB',
+        quantity: 1,
+        isKeg: true,
+      });
+    renderWithProviders(<CartDrawer open={true} onClose={vi.fn()} />);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
 });

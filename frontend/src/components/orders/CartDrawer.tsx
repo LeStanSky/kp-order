@@ -9,6 +9,7 @@ import {
   Stack,
   List,
   ListItem,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -16,6 +17,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/utils/productDisplay';
+import { validateCart } from '@/utils/cartValidation';
 
 interface CartDrawerProps {
   open: boolean;
@@ -25,6 +27,8 @@ interface CartDrawerProps {
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
   const navigate = useNavigate();
   const { items, updateQuantity, removeItem, clearCart, totalAmount } = useCartStore();
+
+  const violations = validateCart(items);
 
   const handleCheckout = () => {
     onClose();
@@ -104,6 +108,15 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
 
             <Divider />
             <Box sx={{ p: 2 }}>
+              {violations.length > 0 && (
+                <Stack spacing={0.5} sx={{ mb: 2 }}>
+                  {violations.map((v, i) => (
+                    <Alert key={i} severity="warning" sx={{ py: 0.25, fontSize: '0.75rem' }}>
+                      {v.message}
+                    </Alert>
+                  ))}
+                </Stack>
+              )}
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Итого: {formatPrice(totalAmount())} RUB
               </Typography>

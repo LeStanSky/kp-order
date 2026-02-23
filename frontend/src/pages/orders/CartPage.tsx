@@ -16,6 +16,7 @@ import {
   Stack,
   CircularProgress,
   IconButton,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -24,6 +25,7 @@ import toast from 'react-hot-toast';
 import { useCartStore } from '@/store/cartStore';
 import { ordersApi } from '@/api/orders.api';
 import { formatPrice } from '@/utils/productDisplay';
+import { validateCart } from '@/utils/cartValidation';
 
 interface CommentForm {
   comment: string;
@@ -35,6 +37,9 @@ export function CartPage() {
   const [loading, setLoading] = useState(false);
 
   const { register, handleSubmit } = useForm<CommentForm>();
+
+  const violations = validateCart(items);
+  const hasViolations = violations.length > 0;
 
   useEffect(() => {
     if (items.length === 0) {
@@ -136,6 +141,16 @@ export function CartPage() {
         </Table>
       </TableContainer>
 
+      {hasViolations && (
+        <Stack spacing={1} sx={{ mb: 3 }}>
+          {violations.map((v, i) => (
+            <Alert key={i} severity="warning">
+              {v.message}
+            </Alert>
+          ))}
+        </Stack>
+      )}
+
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
         <TextField
           label="Комментарий к заказу"
@@ -147,7 +162,7 @@ export function CartPage() {
         />
 
         <Stack direction="row" spacing={2}>
-          <Button variant="contained" type="submit" disabled={loading}>
+          <Button variant="contained" type="submit" disabled={loading || hasViolations}>
             {loading ? <CircularProgress size={20} /> : 'Подтвердить заказ'}
           </Button>
           <Button variant="outlined" onClick={() => navigate('/products')}>

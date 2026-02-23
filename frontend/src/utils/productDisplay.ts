@@ -6,7 +6,7 @@ export function formatPrice(value: number): string {
 }
 
 /** Определяет, является ли товар KEG-позицией: unit='дкл' или "PET KEG" в названии. */
-function isKeg(name: string, unit: string | undefined): boolean {
+export function isKeg(name: string, unit: string | undefined): boolean {
   return unit === 'дкл' || /PET\s+KEG/i.test(name);
 }
 
