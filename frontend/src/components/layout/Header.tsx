@@ -37,7 +37,7 @@ export function Header() {
     <AppBar position="static">
       <Toolbar sx={{ gap: 0.5 }}>
         <Typography variant="h6" component="div" sx={{ mr: 2, fontWeight: 700, letterSpacing: 1 }}>
-          ERPStock
+          KPOrder
         </Typography>
 
         <Divider

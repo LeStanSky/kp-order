@@ -57,7 +57,7 @@ export function LoginPage() {
     <Container maxWidth="xs">
       <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-          ERPStock
+          KPOrder
         </Typography>
         <Paper sx={{ p: 4, width: '100%' }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
