@@ -4,6 +4,28 @@ import { productRepository } from '../product.repository';
 const db = prisma as jest.Mocked<typeof prisma>;
 
 describe('ProductRepository', () => {
+  describe('findAll', () => {
+    it('should filter by stocks with quantity > 0', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll({
+        page: 1,
+        limit: 20,
+        sortBy: 'cleanName',
+        sortOrder: 'asc',
+      });
+
+      expect(db.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            stocks: { some: { quantity: { gt: 0 } } },
+          }),
+        }),
+      );
+    });
+  });
+
   describe('updateById', () => {
     it('should call prisma.product.update with correct args', async () => {
       const mockProduct = { id: 'prod-1', name: 'Beer', description: 'Updated' };

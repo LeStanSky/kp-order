@@ -9,6 +9,7 @@ export const productRepository = {
 
     const where: Prisma.ProductWhereInput = {
       isActive: true,
+      stocks: { some: { quantity: { gt: 0 } } },
       ...(search && {
         cleanName: { contains: search, mode: 'insensitive' as const },
       }),

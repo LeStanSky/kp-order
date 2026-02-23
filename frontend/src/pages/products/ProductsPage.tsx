@@ -17,6 +17,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useProducts, useCategories } from '@/hooks/useProducts';
+import { resolveStock } from '@/utils/productDisplay';
 import { ProductRow } from '@/components/products/ProductRow';
 import { ProductDetailModal } from '@/components/products/ProductDetailModal';
 import { CategoryFilter } from '@/components/products/CategoryFilter';
@@ -78,10 +79,13 @@ export function ProductsPage() {
     setPage(1);
   };
 
-  const grouped = useMemo(
-    () => (productsData ? groupByCategory(productsData.data) : null),
-    [productsData],
-  );
+  const grouped = useMemo(() => {
+    if (!productsData) return null;
+    const visible = productsData.data.filter(
+      (p) => resolveStock(p.name, p.stock, p.unit).value > 0,
+    );
+    return groupByCategory(visible);
+  }, [productsData]);
 
   return (
     <Box>

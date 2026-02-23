@@ -37,9 +37,6 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
   const displayStock = resolveStock(product.name, product.stock, product.unit);
   const displayPrice = resolvePrice(product.prices, product.name, product.unit);
   const outOfStock = displayStock.value === 0;
-  // Для кегов (unit=дкл) предупреждение только при < 2, для штучных — при < 10
-  const lowStockThreshold = product.unit === 'дкл' ? 2 : 10;
-  const isLowStock = displayStock.value > 0 && displayStock.value < lowStockThreshold;
 
   const handleAdd = () => {
     if (inputQty < 1) return;
@@ -86,13 +83,7 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
 
       {/* Остаток */}
       <TableCell align="right">
-        <Typography
-          variant="body2"
-          color={isLowStock ? 'warning.main' : 'text.primary'}
-          fontWeight={isLowStock ? 600 : 400}
-        >
-          {displayStock.value}
-        </Typography>
+        <Typography variant="body2">{displayStock.value}</Typography>
       </TableCell>
 
       {/* Цена */}

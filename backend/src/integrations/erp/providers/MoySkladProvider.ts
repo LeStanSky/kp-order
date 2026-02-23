@@ -57,7 +57,7 @@ export class MoySkladProvider implements IERPProvider {
     let hasMore = true;
 
     while (hasMore) {
-      const url = `${this.baseUrl}/entity/assortment?limit=${LIMIT}&offset=${offset}&filter=type=product`;
+      const url = `${this.baseUrl}/entity/assortment?limit=${LIMIT}&offset=${offset}&filter=type=product&expand=uom`;
       const response = await fetchWithRetry(url, { headers: getHeaders() });
       const data = (await response.json()) as any;
       const rows = data.rows || [];

@@ -66,23 +66,34 @@ describe('ProductRow — РОЗЛИВ stock display (дкл → штуки)', ()
   });
 
   it('converts 10л keg: stock 6 дкл → 6 шт', () => {
-    renderRow(makeProduct({ name: 'Пиво Светлое 10 л', stock: 6, unit: 'дкл' }));
+    renderRow(makeProduct({ name: 'Пиво Светлое PET KEG 10 л', stock: 6, unit: 'дкл' }));
     expect(screen.getByText('6')).toBeInTheDocument();
   });
 
   it('converts 20л keg: stock 10 дкл → 5 шт', () => {
-    renderRow(makeProduct({ name: 'Пиво Тёмное 20 л', stock: 10, unit: 'дкл' }));
+    renderRow(makeProduct({ name: 'Пиво Тёмное PET KEG 20 л', stock: 10, unit: 'дкл' }));
     expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('converts 30л keg: stock 9 дкл → 3 шт', () => {
-    renderRow(makeProduct({ name: 'Сидр Яблочный 30 л', stock: 9, unit: 'дкл' }));
+    renderRow(makeProduct({ name: 'Сидр Яблочный PET KEG 30 л', stock: 9, unit: 'дкл' }));
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
   it('shows шт unit for converted дкл product', () => {
-    renderRow(makeProduct({ name: 'Пиво 20 л', stock: 10, unit: 'дкл' }));
+    renderRow(makeProduct({ name: 'Пиво PET KEG 20 л', stock: 10, unit: 'дкл' }));
     expect(screen.getByText('шт')).toBeInTheDocument();
+  });
+
+  it('converts keg when unit is null but PET KEG in name', () => {
+    renderRow(makeProduct({ name: 'Jaws Hopfenbock PET KEG 20л', stock: 10, unit: undefined }));
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('шт')).toBeInTheDocument();
+  });
+
+  it('shows дкл when no volume pattern in name', () => {
+    renderRow(makeProduct({ name: 'Пиво разливное', stock: 5, unit: 'дкл' }));
+    expect(screen.getByText('дкл')).toBeInTheDocument();
   });
 
   it('shows дкл unit when no volume found in name', () => {
@@ -125,9 +136,9 @@ describe('ProductRow — скрытие "PET KEG" в названии', () => {
     expect(screen.getByText('Jaws Weizen алк.5,1% 20 л.')).toBeInTheDocument();
   });
 
-  it('не трогает "PET KEG" для не-дкл товара', () => {
-    renderRow(makeProduct({ name: 'Пиво PET KEG бутылочное', stock: 5, unit: 'шт' }));
-    expect(screen.getByText('Пиво PET KEG бутылочное')).toBeInTheDocument();
+  it('не трогает название для не-дкл товара без PET KEG', () => {
+    renderRow(makeProduct({ name: 'Пиво светлое бутылочное', stock: 5, unit: 'шт' }));
+    expect(screen.getByText('Пиво светлое бутылочное')).toBeInTheDocument();
   });
 });
 

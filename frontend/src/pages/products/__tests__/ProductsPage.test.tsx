@@ -115,6 +115,61 @@ describe('ProductsPage', () => {
     });
   });
 
+  it('hides product with zero stock', async () => {
+    const { useProducts } = await import('@/hooks/useProducts');
+    vi.mocked(useProducts).mockReturnValue({
+      data: {
+        ...mockProducts,
+        data: [
+          ...mockProducts.data,
+          {
+            id: 'p3',
+            name: 'Пустой товар',
+            category: 'Молочные',
+            isActive: true,
+            stock: 0,
+            prices: [],
+          },
+        ],
+      },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useProducts>);
+
+    renderWithProviders(<ProductsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Молоко')).toBeInTheDocument();
+      expect(screen.queryByText('Пустой товар')).not.toBeInTheDocument();
+    });
+  });
+
+  it('hides category header when all products have zero stock', async () => {
+    const { useProducts } = await import('@/hooks/useProducts');
+    vi.mocked(useProducts).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'p1',
+            name: 'Пустой товар',
+            category: 'Пустая категория',
+            isActive: true,
+            stock: 0,
+            prices: [],
+          },
+        ],
+        pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+      },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useProducts>);
+
+    renderWithProviders(<ProductsPage />);
+    await waitFor(() => {
+      expect(screen.queryByText('Пустой товар')).not.toBeInTheDocument();
+      expect(screen.queryByText('Пустая категория')).not.toBeInTheDocument();
+    });
+  });
+
   it('expands category again after second click', async () => {
     renderWithProviders(<ProductsPage />);
     await waitFor(() => {
