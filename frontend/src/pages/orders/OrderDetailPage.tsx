@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
@@ -14,6 +15,11 @@ import {
   Skeleton,
   Divider,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { format } from 'date-fns';
@@ -27,8 +33,12 @@ export function OrderDetailPage() {
 
   const { data: order, isLoading } = useOrder(id ?? '');
   const { mutate: repeatOrder, isPending: repeating } = useRepeatOrder();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleRepeat = () => {
+  const handleRepeatClick = () => setConfirmOpen(true);
+
+  const handleConfirm = () => {
+    setConfirmOpen(false);
     if (!order) return;
     repeatOrder(order.id, {
       onSuccess: () => {
@@ -38,6 +48,8 @@ export function OrderDetailPage() {
       onError: () => toast.error('Не удалось повторить заказ'),
     });
   };
+
+  const handleCancelConfirm = () => setConfirmOpen(false);
 
   if (isLoading) {
     return (
@@ -114,10 +126,25 @@ export function OrderDetailPage() {
       </TableContainer>
 
       <Stack direction="row" spacing={2}>
-        <Button variant="contained" onClick={handleRepeat} disabled={repeating}>
+        <Button variant="contained" onClick={handleRepeatClick} disabled={repeating}>
           {repeating ? <CircularProgress size={20} /> : 'Повторить заказ'}
         </Button>
       </Stack>
+
+      <Dialog open={confirmOpen} onClose={handleCancelConfirm}>
+        <DialogTitle>Повторить заказ?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Будет создан новый заказ с текущими ценами. Продолжить?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelConfirm}>Отмена</Button>
+          <Button variant="contained" onClick={handleConfirm} autoFocus>
+            Подтвердить
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '@/test/utils';
 import { OrderDetailPage } from '../OrderDetailPage';
 import { useAuthStore } from '@/store/authStore';
@@ -92,6 +92,53 @@ describe('OrderDetailPage', () => {
     renderWithProviders(<OrderDetailPage />);
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: /отменить|cancel/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it('opens confirm dialog when repeat button clicked', async () => {
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /повторить|repeat/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /повторить|repeat/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText(/создан новый заказ/i)).toBeInTheDocument();
+  });
+
+  it('calls repeatOrder mutate when confirm clicked', async () => {
+    const mockMutate = vi.fn();
+    const { useRepeatOrder } = await import('@/hooks/useOrders');
+    vi.mocked(useRepeatOrder).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useRepeatOrder>);
+
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /повторить|repeat/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /повторить|repeat/i }));
+    fireEvent.click(screen.getByRole('button', { name: /подтвердить/i }));
+    expect(mockMutate).toHaveBeenCalledWith('order-1', expect.any(Object));
+  });
+
+  it('does not call repeatOrder when cancel clicked', async () => {
+    const mockMutate = vi.fn();
+    const { useRepeatOrder } = await import('@/hooks/useOrders');
+    vi.mocked(useRepeatOrder).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useRepeatOrder>);
+
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /повторить|repeat/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /повторить|repeat/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^отмена$/i }));
+    expect(mockMutate).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
   });
 });
