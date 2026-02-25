@@ -77,22 +77,6 @@ export function Header() {
           Заказы
         </Button>
 
-        {!isClient && (
-          <Button
-            color="inherit"
-            startIcon={<NotificationsIcon />}
-            onClick={() => navigate('/stock-alerts')}
-            sx={{
-              fontWeight: onAlerts ? 700 : 400,
-              borderBottom: onAlerts ? '2px solid white' : '2px solid transparent',
-              borderRadius: 0,
-              pb: 0.5,
-            }}
-          >
-            Оповещения
-          </Button>
-        )}
-
         {isAdmin && (
           <Button
             color="inherit"
@@ -106,6 +90,22 @@ export function Header() {
             }}
           >
             Пользователи
+          </Button>
+        )}
+
+        {!isClient && (
+          <Button
+            color="inherit"
+            startIcon={<NotificationsIcon />}
+            onClick={() => navigate('/stock-alerts')}
+            sx={{
+              fontWeight: onAlerts ? 700 : 400,
+              borderBottom: onAlerts ? '2px solid white' : '2px solid transparent',
+              borderRadius: 0,
+              pb: 0.5,
+            }}
+          >
+            Оповещения
           </Button>
         )}
 
