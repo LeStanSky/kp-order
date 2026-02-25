@@ -42,4 +42,8 @@ export const ordersApi = {
     const { data } = await apiClient.post<Order>(`/api/orders/${id}/repeat`);
     return data;
   },
+
+  deleteOrder: async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/orders/${id}`);
+  },
 };

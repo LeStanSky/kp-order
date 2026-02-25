@@ -28,4 +28,6 @@ router.patch(
 
 router.post('/:id/repeat', authenticate, requireRole('CLIENT'), orderController.repeatOrder);
 
+router.delete('/:id', authenticate, requireRole('ADMIN'), orderController.deleteOrder);
+
 export default router;

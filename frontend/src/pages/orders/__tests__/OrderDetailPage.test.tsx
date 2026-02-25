@@ -8,6 +8,7 @@ import type { User } from '@/types/user.types';
 vi.mock('@/hooks/useOrders', () => ({
   useOrder: vi.fn(),
   useRepeatOrder: vi.fn(),
+  useDeleteOrder: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -47,12 +48,14 @@ const mockOrder = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
+const adminUser: User = { id: '2', email: 'a@a.com', name: 'Admin', role: 'ADMIN' };
+
 beforeEach(async () => {
   useAuthStore.getState().clearAuth();
   useAuthStore.getState().setAuth(clientUser, tokens);
   vi.clearAllMocks();
 
-  const { useOrder, useRepeatOrder } = await import('@/hooks/useOrders');
+  const { useOrder, useRepeatOrder, useDeleteOrder } = await import('@/hooks/useOrders');
   vi.mocked(useOrder).mockReturnValue({
     data: mockOrder,
     isLoading: false,
@@ -62,6 +65,10 @@ beforeEach(async () => {
     mutate: vi.fn(),
     isPending: false,
   } as unknown as ReturnType<typeof useRepeatOrder>);
+  vi.mocked(useDeleteOrder).mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  } as unknown as ReturnType<typeof useDeleteOrder>);
 });
 
 describe('OrderDetailPage', () => {
@@ -120,6 +127,76 @@ describe('OrderDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /повторить|repeat/i }));
     fireEvent.click(screen.getByRole('button', { name: /подтвердить/i }));
     expect(mockMutate).toHaveBeenCalledWith('order-1', expect.any(Object));
+  });
+
+  it('does not show delete button for CLIENT', async () => {
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByText('ORD-001')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: /удалить/i })).not.toBeInTheDocument();
+  });
+
+  it('shows delete button for ADMIN', async () => {
+    useAuthStore.getState().clearAuth();
+    useAuthStore.getState().setAuth(adminUser, tokens);
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /удалить/i })).toBeInTheDocument();
+    });
+  });
+
+  it('opens delete confirm dialog when delete button clicked', async () => {
+    useAuthStore.getState().clearAuth();
+    useAuthStore.getState().setAuth(adminUser, tokens);
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /удалить/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /удалить/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText(/удалён безвозвратно/i)).toBeInTheDocument();
+  });
+
+  it('calls deleteOrder mutate when delete confirmed', async () => {
+    const mockMutate = vi.fn();
+    const { useDeleteOrder } = await import('@/hooks/useOrders');
+    vi.mocked(useDeleteOrder).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDeleteOrder>);
+
+    useAuthStore.getState().clearAuth();
+    useAuthStore.getState().setAuth(adminUser, tokens);
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /удалить/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /удалить/i }));
+    fireEvent.click(screen.getByRole('button', { name: /подтвердить/i }));
+    expect(mockMutate).toHaveBeenCalledWith('order-1', expect.any(Object));
+  });
+
+  it('does not call deleteOrder when cancel clicked', async () => {
+    const mockMutate = vi.fn();
+    const { useDeleteOrder } = await import('@/hooks/useOrders');
+    vi.mocked(useDeleteOrder).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDeleteOrder>);
+
+    useAuthStore.getState().clearAuth();
+    useAuthStore.getState().setAuth(adminUser, tokens);
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /удалить/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /удалить/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^отмена$/i }));
+    expect(mockMutate).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
   });
 
   it('does not call repeatOrder when cancel clicked', async () => {

@@ -232,6 +232,56 @@ describe('Orders Routes', () => {
     });
   });
 
+  describe('DELETE /api/orders/:id', () => {
+    it('should delete order for ADMIN (204)', async () => {
+      const token = makeToken({ id: 'admin-1', role: 'ADMIN', priceGroupId: null });
+      (db.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+      (db.order.delete as jest.Mock).mockResolvedValue(mockOrder);
+
+      const res = await request(app)
+        .delete('/api/orders/order-1')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(204);
+    });
+
+    it('should return 403 for CLIENT role', async () => {
+      const token = makeToken();
+
+      const res = await request(app)
+        .delete('/api/orders/order-1')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should return 403 for MANAGER role', async () => {
+      const token = makeToken({ role: 'MANAGER' });
+
+      const res = await request(app)
+        .delete('/api/orders/order-1')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should return 401 without auth', async () => {
+      const res = await request(app).delete('/api/orders/order-1');
+      expect(res.status).toBe(401);
+    });
+
+    it('should return 404 for non-existent order', async () => {
+      const token = makeToken({ id: 'admin-1', role: 'ADMIN', priceGroupId: null });
+      (db.order.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const res = await request(app)
+        .delete('/api/orders/bad-id')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe('POST /api/orders/:id/repeat', () => {
     it('should repeat an order (201)', async () => {
       const token = makeToken();

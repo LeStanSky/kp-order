@@ -24,7 +24,8 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { useOrder, useRepeatOrder } from '@/hooks/useOrders';
+import { useOrder, useRepeatOrder, useDeleteOrder } from '@/hooks/useOrders';
+import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/utils/productDisplay';
 
 export function OrderDetailPage() {
@@ -33,7 +34,10 @@ export function OrderDetailPage() {
 
   const { data: order, isLoading } = useOrder(id ?? '');
   const { mutate: repeatOrder, isPending: repeating } = useRepeatOrder();
+  const { mutate: deleteOrder, isPending: deleting } = useDeleteOrder();
+  const isAdmin = useAuthStore((s) => s.hasRole('ADMIN'));
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const handleRepeatClick = () => setConfirmOpen(true);
 
@@ -50,6 +54,22 @@ export function OrderDetailPage() {
   };
 
   const handleCancelConfirm = () => setConfirmOpen(false);
+
+  const handleDeleteClick = () => setDeleteConfirmOpen(true);
+
+  const handleDeleteConfirm = () => {
+    setDeleteConfirmOpen(false);
+    if (!order) return;
+    deleteOrder(order.id, {
+      onSuccess: () => {
+        toast.success('Заказ удалён');
+        navigate('/orders');
+      },
+      onError: () => toast.error('Не удалось удалить заказ'),
+    });
+  };
+
+  const handleDeleteCancel = () => setDeleteConfirmOpen(false);
 
   if (isLoading) {
     return (
@@ -129,6 +149,11 @@ export function OrderDetailPage() {
         <Button variant="contained" onClick={handleRepeatClick} disabled={repeating}>
           {repeating ? <CircularProgress size={20} /> : 'Повторить заказ'}
         </Button>
+        {isAdmin && (
+          <Button variant="outlined" color="error" onClick={handleDeleteClick} disabled={deleting}>
+            {deleting ? <CircularProgress size={20} /> : 'Удалить заказ'}
+          </Button>
+        )}
       </Stack>
 
       <Dialog open={confirmOpen} onClose={handleCancelConfirm}>
@@ -141,6 +166,19 @@ export function OrderDetailPage() {
         <DialogActions>
           <Button onClick={handleCancelConfirm}>Отмена</Button>
           <Button variant="contained" onClick={handleConfirm} autoFocus>
+            Подтвердить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteConfirmOpen} onClose={handleDeleteCancel}>
+        <DialogTitle>Удалить заказ?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Заказ будет удалён безвозвратно. Продолжить?</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Отмена</Button>
+          <Button variant="contained" color="error" onClick={handleDeleteConfirm} autoFocus>
             Подтвердить
           </Button>
         </DialogActions>

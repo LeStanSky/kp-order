@@ -389,6 +389,37 @@ describe('orderService', () => {
     });
   });
 
+  describe('deleteOrder', () => {
+    it('should delete order for ADMIN', async () => {
+      mockOrderRepo.findById.mockResolvedValue(mockOrder as any);
+      (mockOrderRepo as any).deleteById = jest.fn().mockResolvedValue(undefined);
+
+      await orderService.deleteOrder('order-1', { id: 'admin-1', role: 'ADMIN' as const });
+
+      expect((mockOrderRepo as any).deleteById).toHaveBeenCalledWith('order-1');
+    });
+
+    it('should throw NotFoundError for non-existent order', async () => {
+      mockOrderRepo.findById.mockResolvedValue(null);
+
+      await expect(
+        orderService.deleteOrder('bad-id', { id: 'admin-1', role: 'ADMIN' as const }),
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it('should throw ForbiddenError for CLIENT role', async () => {
+      await expect(
+        orderService.deleteOrder('order-1', { id: 'user-1', role: 'CLIENT' as const }),
+      ).rejects.toThrow(ForbiddenError);
+    });
+
+    it('should throw ForbiddenError for MANAGER role', async () => {
+      await expect(
+        orderService.deleteOrder('order-1', { id: 'manager-1', role: 'MANAGER' as const }),
+      ).rejects.toThrow(ForbiddenError);
+    });
+  });
+
   describe('repeatOrder', () => {
     it('should create a new order with items from original order', async () => {
       mockOrderRepo.findById.mockResolvedValue(mockOrder as any);

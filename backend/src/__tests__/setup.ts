@@ -34,6 +34,7 @@ jest.mock('../config/database', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
       count: jest.fn(),
     },
     orderItem: {

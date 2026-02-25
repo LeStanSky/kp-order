@@ -83,4 +83,8 @@ export const orderRepository = {
       include: orderInclude,
     });
   },
+
+  async deleteById(id: string) {
+    await prisma.order.delete({ where: { id } });
+  },
 };

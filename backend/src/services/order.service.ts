@@ -117,6 +117,15 @@ export const orderService = {
     return orderRepository.updateStatus(orderId, 'CANCELLED');
   },
 
+  async deleteOrder(orderId: string, reqUser: RequestUser) {
+    if (reqUser.role !== 'ADMIN') throw new ForbiddenError('Access denied');
+
+    const order = await orderRepository.findById(orderId);
+    if (!order) throw new NotFoundError('Order not found');
+
+    await orderRepository.deleteById(orderId);
+  },
+
   async repeatOrder(orderId: string, reqUser: RequestUser) {
     const order = await orderRepository.findById(orderId);
     if (!order) throw new NotFoundError('Order not found');

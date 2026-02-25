@@ -38,4 +38,12 @@ export const orderController = {
     });
     res.status(201).json(order);
   },
+
+  async deleteOrder(req: Request, res: Response) {
+    await orderService.deleteOrder(req.params.id as string, {
+      id: req.user!.id,
+      role: req.user!.role,
+    });
+    res.status(204).send();
+  },
 };
