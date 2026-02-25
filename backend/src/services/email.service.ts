@@ -18,9 +18,25 @@ interface OrderEmailData {
 }
 
 export const emailService = {
+  async verifyConnection(): Promise<boolean> {
+    try {
+      await transporter.verify();
+      return true;
+    } catch (error) {
+      logger.error('SMTP connection verification failed', { error: (error as Error).message });
+      return false;
+    }
+  },
+
   async sendOrderNotificationToManager(
     data: OrderEmailData & { managerEmail: string; managerName: string },
   ): Promise<void> {
+    if (!env.SMTP_ENABLED) {
+      logger.debug('SMTP disabled, skipping manager notification', {
+        orderNumber: data.orderNumber,
+      });
+      return;
+    }
     try {
       await transporter.sendMail({
         from: env.SMTP_FROM,
@@ -43,6 +59,12 @@ export const emailService = {
   },
 
   async sendOrderConfirmationToClient(data: OrderEmailData): Promise<void> {
+    if (!env.SMTP_ENABLED) {
+      logger.debug('SMTP disabled, skipping client confirmation', {
+        orderNumber: data.orderNumber,
+      });
+      return;
+    }
     try {
       await transporter.sendMail({
         from: env.SMTP_FROM,
@@ -69,6 +91,12 @@ export const emailService = {
     currentStock: number;
     minStock: number;
   }): Promise<void> {
+    if (!env.SMTP_ENABLED) {
+      logger.debug('SMTP disabled, skipping stock alert notification', {
+        productName: data.productName,
+      });
+      return;
+    }
     try {
       await transporter.sendMail({
         from: env.SMTP_FROM,

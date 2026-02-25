@@ -1,9 +1,23 @@
 const mockSendMail = jest.fn();
+const mockVerify = jest.fn();
 
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn().mockReturnValue({
     sendMail: mockSendMail,
+    verify: mockVerify,
   }),
+}));
+
+jest.mock('../../config/env', () => ({
+  env: {
+    SMTP_ENABLED: true,
+    SMTP_HOST: 'smtp.yandex.ru',
+    SMTP_PORT: 587,
+    SMTP_USER: 'noreply@test.com',
+    SMTP_PASS: 'testpass',
+    SMTP_FROM: 'noreply@test.com',
+    NODE_ENV: 'test',
+  },
 }));
 
 import { emailService } from '../email.service';
@@ -11,6 +25,7 @@ import { emailService } from '../email.service';
 describe('emailService', () => {
   beforeEach(() => {
     mockSendMail.mockReset();
+    mockVerify.mockReset();
   });
 
   describe('sendOrderNotificationToManager', () => {
@@ -67,6 +82,25 @@ describe('emailService', () => {
       mockSendMail.mockRejectedValue(new Error('SMTP error'));
 
       await expect(emailService.sendOrderConfirmationToClient(orderData)).resolves.not.toThrow();
+    });
+  });
+
+  describe('verifyConnection', () => {
+    it('should return true when SMTP connection succeeds', async () => {
+      mockVerify.mockResolvedValue(true);
+
+      const result = await emailService.verifyConnection();
+
+      expect(result).toBe(true);
+      expect(mockVerify).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return false when SMTP connection fails', async () => {
+      mockVerify.mockRejectedValue(new Error('Connection refused'));
+
+      const result = await emailService.verifyConnection();
+
+      expect(result).toBe(false);
     });
   });
 });

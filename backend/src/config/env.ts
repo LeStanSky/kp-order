@@ -24,11 +24,12 @@ export const env = {
   MOYSKLAD_BASE_URL: process.env.MOYSKLAD_BASE_URL || 'https://api.moysklad.ru/api/remap/1.2',
 
   // SMTP
+  SMTP_ENABLED: process.env.SMTP_ENABLED === 'true',
   SMTP_HOST: process.env.SMTP_HOST || '',
   SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
   SMTP_USER: process.env.SMTP_USER || '',
   SMTP_PASS: process.env.SMTP_PASS || '',
-  SMTP_FROM: process.env.SMTP_FROM || 'noreply@erpstock.local',
+  SMTP_FROM: process.env.SMTP_FROM || 'noreply@kporder.local',
 
   // Notifications
   OPERATOR_EMAIL: process.env.OPERATOR_EMAIL || '',
