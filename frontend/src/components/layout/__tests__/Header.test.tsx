@@ -54,6 +54,18 @@ describe('Header', () => {
     expect(screen.queryByTestId('cart-icon-btn')).not.toBeInTheDocument();
   });
 
+  it('shows Пользователи link for ADMIN', () => {
+    useAuthStore.getState().setAuth(adminUser, tokens);
+    renderWithProviders(<Header />);
+    expect(screen.getByRole('button', { name: /пользователи/i })).toBeInTheDocument();
+  });
+
+  it('does not show Пользователи link for CLIENT', () => {
+    useAuthStore.getState().setAuth(clientUser, tokens);
+    renderWithProviders(<Header />);
+    expect(screen.queryByRole('button', { name: /пользователи/i })).not.toBeInTheDocument();
+  });
+
   it('shows cart badge with item count', () => {
     useAuthStore.getState().setAuth(clientUser, tokens);
     useCartStore

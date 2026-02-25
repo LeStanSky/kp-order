@@ -14,6 +14,7 @@ import ListAltIcon from '@mui/icons-material/ListAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import PeopleIcon from '@mui/icons-material/People';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 
@@ -29,9 +30,11 @@ export function Header() {
   };
 
   const isClient = hasRole('CLIENT');
+  const isAdmin = hasRole('ADMIN');
   const onProducts = location.pathname === '/products';
   const onOrders = location.pathname.startsWith('/orders');
   const onAlerts = location.pathname === '/stock-alerts';
+  const onUsers = location.pathname === '/users';
 
   return (
     <AppBar position="static">
@@ -87,6 +90,22 @@ export function Header() {
             }}
           >
             Оповещения
+          </Button>
+        )}
+
+        {isAdmin && (
+          <Button
+            color="inherit"
+            startIcon={<PeopleIcon />}
+            onClick={() => navigate('/users')}
+            sx={{
+              fontWeight: onUsers ? 700 : 400,
+              borderBottom: onUsers ? '2px solid white' : '2px solid transparent',
+              borderRadius: 0,
+              pb: 0.5,
+            }}
+          >
+            Пользователи
           </Button>
         )}
 
