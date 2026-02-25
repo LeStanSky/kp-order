@@ -77,4 +77,28 @@ describe('LoginPage', () => {
       expect(toast.default.error).toHaveBeenCalled();
     });
   });
+
+  it('does not show register link', () => {
+    renderWithProviders(<LoginPage />);
+    expect(screen.queryByText(/зарегистрироваться/i)).not.toBeInTheDocument();
+  });
+
+  it('redirects to /change-password when mustChangePassword is true', async () => {
+    const { authApi } = await import('@/api/auth.api');
+    vi.mocked(authApi.login).mockResolvedValueOnce({
+      user: { id: '1', email: 'test@test.com', name: 'Test', role: 'CLIENT' },
+      accessToken: 'token',
+      refreshToken: 'refresh',
+      mustChangePassword: true,
+    });
+
+    renderWithProviders(<LoginPage />);
+    await userEvent.type(screen.getByLabelText(/email/i), 'test@test.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: /войти|sign in|login/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/change-password');
+    });
+  });
 });

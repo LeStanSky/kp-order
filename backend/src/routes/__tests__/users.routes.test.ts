@@ -1,5 +1,6 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import app from '../../app';
 import { prisma } from '../../config/database';
 import { env } from '../../config/env';
@@ -23,6 +24,7 @@ const mockUser = {
   role: 'CLIENT',
   password: 'hashed',
   isActive: true,
+  mustChangePassword: false,
   priceGroupId: 'pg-1',
   managerId: null,
   createdAt: new Date(),
@@ -187,6 +189,139 @@ describe('Users Routes', () => {
       const res = await request(app).patch('/api/users/user-1').send({ role: 'MANAGER' });
 
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe('POST /api/users', () => {
+    it('should create a new user for ADMIN (201)', async () => {
+      const token = makeToken();
+      (db.user.findUnique as jest.Mock).mockResolvedValue(null); // no existing email
+      (db.user.create as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        id: 'new-user',
+        email: 'newclient@test.com',
+        mustChangePassword: true,
+      });
+
+      const res = await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'New Client',
+          email: 'newclient@test.com',
+          password: 'TempPass123!',
+          role: 'CLIENT',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.email).toBe('newclient@test.com');
+      expect(res.body).not.toHaveProperty('password');
+      expect(res.body.mustChangePassword).toBe(true);
+    });
+
+    it('should return 409 for duplicate email', async () => {
+      const token = makeToken();
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+
+      const res = await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Dup',
+          email: 'client@test.com',
+          password: 'TempPass123!',
+          role: 'CLIENT',
+        });
+
+      expect(res.status).toBe(409);
+    });
+
+    it('should return 422 for missing required fields', async () => {
+      const token = makeToken();
+
+      const res = await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'x@test.com' });
+
+      expect(res.status).toBe(422);
+    });
+
+    it('should return 403 for CLIENT role', async () => {
+      const token = makeToken({ role: 'CLIENT', priceGroupId: 'pg-1' });
+
+      const res = await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'New',
+          email: 'new@test.com',
+          password: 'TempPass123!',
+          role: 'CLIENT',
+        });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should return 401 without auth', async () => {
+      const res = await request(app)
+        .post('/api/users')
+        .send({ name: 'New', email: 'new@test.com', password: 'TempPass123!', role: 'CLIENT' });
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('POST /api/users/:id/reset-password', () => {
+    it('should reset password for ADMIN (200)', async () => {
+      const token = makeToken();
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (db.user.update as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        password: 'new_hashed',
+        mustChangePassword: true,
+      });
+
+      const res = await request(app)
+        .post('/api/users/user-1/reset-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: 'NewTemp123!' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should return 404 for non-existent user', async () => {
+      const token = makeToken();
+      (db.user.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const res = await request(app)
+        .post('/api/users/bad-id/reset-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: 'NewTemp123!' });
+
+      expect(res.status).toBe(404);
+    });
+
+    it('should return 422 for short password', async () => {
+      const token = makeToken();
+
+      const res = await request(app)
+        .post('/api/users/user-1/reset-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: 'short' });
+
+      expect(res.status).toBe(422);
+    });
+
+    it('should return 403 for non-ADMIN role', async () => {
+      const token = makeToken({ role: 'MANAGER' });
+
+      const res = await request(app)
+        .post('/api/users/user-1/reset-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: 'NewTemp123!' });
+
+      expect(res.status).toBe(403);
     });
   });
 });

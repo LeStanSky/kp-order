@@ -102,6 +102,7 @@ export const authService = {
 
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      mustChangePassword: user.mustChangePassword,
       ...tokens,
     };
   },
@@ -145,6 +146,15 @@ export const authService = {
 
   async logout(refreshToken: string) {
     await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+  },
+
+  async changePassword(userId: string, newPassword: string) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedError('User not found');
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await userRepository.update(userId, { password: hashedPassword, mustChangePassword: false });
   },
 
   async getMe(userId: string) {

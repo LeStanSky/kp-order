@@ -1,10 +1,15 @@
 import { userService } from '../user.service';
 import { userRepository } from '../../repositories/user.repository';
-import { NotFoundError } from '../../utils/errors';
+import { NotFoundError, ConflictError } from '../../utils/errors';
+import bcrypt from 'bcrypt';
+
+jest.mock('bcrypt');
 
 jest.mock('../../repositories/user.repository');
 
 const mockUserRepo = userRepository as jest.Mocked<typeof userRepository>;
+
+const mockBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
 
 const mockUser = {
   id: 'user-1',
@@ -13,6 +18,7 @@ const mockUser = {
   role: 'CLIENT' as const,
   password: 'hashed_password',
   isActive: true,
+  mustChangePassword: false,
   priceGroupId: 'pg-1',
   managerId: null,
   createdAt: new Date(),
@@ -106,6 +112,97 @@ describe('UserService', () => {
       mockUserRepo.findById.mockResolvedValue(null);
 
       await expect(userService.updateUser('bad-id', { role: 'MANAGER' })).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+  });
+
+  describe('createUser', () => {
+    beforeEach(() => {
+      (mockBcrypt.hash as jest.Mock).mockResolvedValue('hashed_temp_password');
+    });
+
+    it('should create a user with mustChangePassword=true', async () => {
+      mockUserRepo.findByEmail.mockResolvedValue(null);
+      const createdUser = {
+        ...mockUser,
+        id: 'new-user',
+        email: 'new@test.com',
+        mustChangePassword: true,
+      };
+      mockUserRepo.create.mockResolvedValue(createdUser as any);
+
+      const result = await userService.createUser({
+        name: 'New Client',
+        email: 'new@test.com',
+        password: 'temppass1',
+        role: 'CLIENT',
+      });
+
+      expect(result).not.toHaveProperty('password');
+      expect(result.mustChangePassword).toBe(true);
+      expect(mockUserRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ mustChangePassword: true }),
+      );
+    });
+
+    it('should hash the provided password', async () => {
+      mockUserRepo.findByEmail.mockResolvedValue(null);
+      mockUserRepo.create.mockResolvedValue({ ...mockUser, mustChangePassword: true } as any);
+
+      await userService.createUser({
+        name: 'Client',
+        email: 'x@test.com',
+        password: 'rawpass123',
+        role: 'CLIENT',
+      });
+
+      expect(mockBcrypt.hash).toHaveBeenCalledWith('rawpass123', 12);
+      expect(mockUserRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ password: 'hashed_temp_password' }),
+      );
+    });
+
+    it('should throw ConflictError for duplicate email', async () => {
+      mockUserRepo.findByEmail.mockResolvedValue(mockUser as any);
+
+      await expect(
+        userService.createUser({
+          name: 'Dup',
+          email: 'client@test.com',
+          password: 'pass1234',
+          role: 'CLIENT',
+        }),
+      ).rejects.toThrow(ConflictError);
+    });
+  });
+
+  describe('resetPassword', () => {
+    beforeEach(() => {
+      (mockBcrypt.hash as jest.Mock).mockResolvedValue('hashed_new_password');
+    });
+
+    it('should hash new password and set mustChangePassword=true', async () => {
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      mockUserRepo.update.mockResolvedValue({
+        ...mockUser,
+        password: 'hashed_new_password',
+        mustChangePassword: true,
+      } as any);
+
+      await userService.resetPassword('user-1', 'newpass123');
+
+      expect(mockBcrypt.hash).toHaveBeenCalledWith('newpass123', 12);
+      expect(mockUserRepo.update).toHaveBeenCalledWith('user-1', {
+        password: 'hashed_new_password',
+        mustChangePassword: true,
+      });
+    });
+
+    it('should throw NotFoundError for non-existent user', async () => {
+      mockUserRepo.findById.mockResolvedValue(null);
+
+      await expect(userService.resetPassword('bad-id', 'newpass123')).rejects.toThrow(
         NotFoundError,
       );
     });

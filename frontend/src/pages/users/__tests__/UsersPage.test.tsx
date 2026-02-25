@@ -5,7 +5,9 @@ import { UsersPage } from '../UsersPage';
 
 vi.mock('@/hooks/useUsers', () => ({
   useUsers: vi.fn(),
+  useCreateUser: vi.fn(),
   useUpdateUser: vi.fn(),
+  useResetPassword: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -19,6 +21,7 @@ const mockUsers = [
     email: 'client@test.com',
     role: 'CLIENT' as const,
     isActive: true,
+    mustChangePassword: false,
     priceGroupId: 'pg-1',
     managerId: 'user-2',
     priceGroup: { id: 'pg-1', name: 'Розница' },
@@ -32,6 +35,7 @@ const mockUsers = [
     email: 'manager@test.com',
     role: 'MANAGER' as const,
     isActive: false,
+    mustChangePassword: false,
     priceGroupId: null,
     managerId: null,
     priceGroup: null,
@@ -44,16 +48,25 @@ const mockUsers = [
 beforeEach(async () => {
   vi.clearAllMocks();
 
-  const { useUsers, useUpdateUser } = await import('@/hooks/useUsers');
+  const { useUsers, useCreateUser, useUpdateUser, useResetPassword } =
+    await import('@/hooks/useUsers');
   vi.mocked(useUsers).mockReturnValue({
     data: mockUsers,
     isLoading: false,
     error: null,
   } as ReturnType<typeof useUsers>);
+  vi.mocked(useCreateUser).mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  } as unknown as ReturnType<typeof useCreateUser>);
   vi.mocked(useUpdateUser).mockReturnValue({
     mutate: vi.fn(),
     isPending: false,
   } as unknown as ReturnType<typeof useUpdateUser>);
+  vi.mocked(useResetPassword).mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  } as unknown as ReturnType<typeof useResetPassword>);
 });
 
 describe('UsersPage', () => {
@@ -181,5 +194,90 @@ describe('UsersPage', () => {
 
     renderWithProviders(<UsersPage />);
     expect(document.querySelector('.MuiSkeleton-root')).toBeInTheDocument();
+  });
+
+  it('shows "Создать пользователя" button', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /создать пользователя/i })).toBeInTheDocument();
+    });
+  });
+
+  it('opens create user dialog when create button clicked', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Иван Клиент')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /создать пользователя/i }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText(/новый пользователь/i)).toBeInTheDocument();
+  });
+
+  it('calls createUser mutate on submit in create dialog', async () => {
+    const mockMutate = vi.fn();
+    const { useCreateUser } = await import('@/hooks/useUsers');
+    vi.mocked(useCreateUser).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useCreateUser>);
+
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => expect(screen.getByText('Иван Клиент')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /создать пользователя/i }));
+
+    // Fill form
+    fireEvent.change(screen.getByTestId('create-name'), { target: { value: 'Новый Клиент' } });
+    fireEvent.change(screen.getByTestId('create-email'), {
+      target: { value: 'new@test.com' },
+    });
+    fireEvent.change(screen.getByTestId('create-password'), {
+      target: { value: 'TempPass123!' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /^создать$/i }));
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'new@test.com', name: 'Новый Клиент' }),
+      expect.any(Object),
+    );
+  });
+
+  it('shows reset password button for each user', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => expect(screen.getByText('Иван Клиент')).toBeInTheDocument());
+
+    const resetButtons = screen.getAllByRole('button', { name: /сбросить пароль/i });
+    expect(resetButtons.length).toBe(2);
+  });
+
+  it('calls resetPassword mutate when confirmed', async () => {
+    const mockMutate = vi.fn();
+    const { useResetPassword } = await import('@/hooks/useUsers');
+    vi.mocked(useResetPassword).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useResetPassword>);
+
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => expect(screen.getByText('Иван Клиент')).toBeInTheDocument());
+
+    const resetButtons = screen.getAllByRole('button', { name: /сбросить пароль/i });
+    fireEvent.click(resetButtons[0]);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId('reset-password-input'), {
+      target: { value: 'NewTemp123!' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /^сбросить$/i }));
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'user-1', password: 'NewTemp123!' }),
+      expect.any(Object),
+    );
   });
 });

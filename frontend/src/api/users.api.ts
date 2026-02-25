@@ -7,12 +7,22 @@ export interface AdminUser {
   name: string;
   role: UserRole;
   isActive: boolean;
+  mustChangePassword: boolean;
   priceGroupId: string | null;
   managerId: string | null;
   priceGroup?: { id: string; name: string } | null;
   manager?: { id: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateUserParams {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  managerId?: string | null;
+  priceGroupId?: string | null;
 }
 
 export interface UpdateUserParams {
@@ -34,8 +44,17 @@ export const usersApi = {
     return data;
   },
 
+  createUser: async (params: CreateUserParams): Promise<AdminUser> => {
+    const { data } = await apiClient.post<AdminUser>('/api/users', params);
+    return data;
+  },
+
   updateUser: async (id: string, params: UpdateUserParams): Promise<AdminUser> => {
     const { data } = await apiClient.patch<AdminUser>(`/api/users/${id}`, params);
     return data;
+  },
+
+  resetPassword: async (id: string, password: string): Promise<void> => {
+    await apiClient.post(`/api/users/${id}/reset-password`, { password });
   },
 };

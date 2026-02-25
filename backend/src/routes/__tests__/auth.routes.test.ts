@@ -89,6 +89,7 @@ describe('Auth Routes', () => {
       priceGroupId: null,
       priceGroup: null,
       isActive: true,
+      mustChangePassword: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -97,7 +98,7 @@ describe('Auth Routes', () => {
       storedUser.password = await bcrypt.hash('password123', 4); // low rounds for speed
     });
 
-    it('should login successfully (200)', async () => {
+    it('should login successfully (200) and include mustChangePassword', async () => {
       (db.user.findUnique as jest.Mock).mockResolvedValue(storedUser);
       (db.refreshToken.create as jest.Mock).mockResolvedValue({ id: 'rt-1' });
 
@@ -109,6 +110,7 @@ describe('Auth Routes', () => {
       expect(res.body).toHaveProperty('accessToken');
       expect(res.body).toHaveProperty('refreshToken');
       expect(res.body.user.email).toBe('test@example.com');
+      expect(res.body.mustChangePassword).toBe(false);
     });
 
     it('should return 401 for wrong password', async () => {
@@ -241,6 +243,52 @@ describe('Auth Routes', () => {
 
     it('should return 401 without auth', async () => {
       const res = await request(app).get('/api/auth/me');
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('POST /api/auth/change-password', () => {
+    it('should change password for authenticated user (200)', async () => {
+      const token = makeToken({ id: 'user-1' });
+      (db.user.findUnique as jest.Mock).mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        name: 'Test',
+        password: 'old_hashed',
+        role: 'CLIENT',
+        priceGroupId: null,
+        isActive: true,
+        mustChangePassword: true,
+        clients: [],
+        manager: null,
+        priceGroup: null,
+      });
+      (db.user.update as jest.Mock).mockResolvedValue({});
+
+      const res = await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ newPassword: 'NewPass123!' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should return 422 for short password', async () => {
+      const token = makeToken({ id: 'user-1' });
+
+      const res = await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ newPassword: 'short' });
+
+      expect(res.status).toBe(422);
+    });
+
+    it('should return 401 without auth', async () => {
+      const res = await request(app)
+        .post('/api/auth/change-password')
+        .send({ newPassword: 'NewPass123!' });
+
       expect(res.status).toBe(401);
     });
   });

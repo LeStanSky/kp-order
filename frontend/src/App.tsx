@@ -7,7 +7,7 @@ import { theme } from '@/config/theme';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/pages/auth/LoginPage';
-import { RegisterPage } from '@/pages/auth/RegisterPage';
+import { ChangePasswordPage } from '@/pages/auth/ChangePasswordPage';
 import { ProductsPage } from '@/pages/products/ProductsPage';
 import { CartPage } from '@/pages/orders/CartPage';
 import { OrdersPage } from '@/pages/orders/OrdersPage';
@@ -46,14 +46,8 @@ function App() {
                 </PublicRoute>
               }
             />
-            <Route
-              path="/register"
-              element={
-                <PublicRoute>
-                  <RegisterPage />
-                </PublicRoute>
-              }
-            />
+            <Route path="/register" element={<Navigate to="/login" replace />} />
+            <Route path="/change-password" element={<ChangePasswordPage />} />
             <Route
               path="/products"
               element={

@@ -17,4 +17,5 @@ export interface AuthResponse {
   user: User;
   accessToken: string;
   refreshToken: string;
+  mustChangePassword?: boolean;
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +9,6 @@ import {
   Container,
   TextField,
   Typography,
-  Link,
   Paper,
   CircularProgress,
 } from '@mui/material';
@@ -45,7 +44,11 @@ export function LoginPage() {
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
       });
-      navigate('/products');
+      if (response.mustChangePassword) {
+        navigate('/change-password');
+      } else {
+        navigate('/products');
+      }
     } catch {
       toast.error('Неверный email или пароль');
     } finally {
@@ -89,11 +92,6 @@ export function LoginPage() {
             <Button type="submit" fullWidth variant="contained" sx={{ mt: 2 }} disabled={loading}>
               {loading ? <CircularProgress size={24} /> : 'Войти'}
             </Button>
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Link component={RouterLink} to="/register" variant="body2">
-                Нет аккаунта? Зарегистрироваться
-              </Link>
-            </Box>
           </Box>
         </Paper>
       </Box>
