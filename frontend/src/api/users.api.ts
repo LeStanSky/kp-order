@@ -10,6 +10,7 @@ export interface AdminUser {
   priceGroupId: string | null;
   managerId: string | null;
   priceGroup?: { id: string; name: string } | null;
+  manager?: { id: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -19,6 +20,7 @@ export interface UpdateUserParams {
   email?: string;
   role?: UserRole;
   isActive?: boolean;
+  managerId?: string | null;
 }
 
 export const usersApi = {

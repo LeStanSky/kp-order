@@ -57,7 +57,14 @@ export const orderService = {
       totalAmount,
       itemCount: items.length,
     };
-    emailService.sendOrderNotificationToOperator(emailData);
+    const manager = (user as any).manager;
+    if (manager?.email) {
+      emailService.sendOrderNotificationToManager({
+        ...emailData,
+        managerEmail: manager.email,
+        managerName: manager.name,
+      });
+    }
     emailService.sendOrderConfirmationToClient(emailData);
 
     return order;

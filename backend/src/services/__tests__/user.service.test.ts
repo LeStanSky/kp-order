@@ -90,6 +90,18 @@ describe('UserService', () => {
       expect(result).not.toHaveProperty('password');
     });
 
+    it('should update managerId field', async () => {
+      const newManagerId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      const updatedUser = { ...mockUser, managerId: newManagerId };
+      mockUserRepo.update.mockResolvedValue(updatedUser as any);
+
+      const result = await userService.updateUser('user-1', { managerId: newManagerId });
+
+      expect(result.managerId).toBe(newManagerId);
+      expect(result).not.toHaveProperty('password');
+    });
+
     it('should throw NotFoundError for non-existent user', async () => {
       mockUserRepo.findById.mockResolvedValue(null);
 

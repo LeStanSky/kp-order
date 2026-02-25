@@ -6,53 +6,40 @@ jest.mock('nodemailer', () => ({
   }),
 }));
 
-import { env } from '../../config/env';
 import { emailService } from '../email.service';
 
 describe('emailService', () => {
-  const originalOperatorEmail = env.OPERATOR_EMAIL;
-
   beforeEach(() => {
     mockSendMail.mockReset();
-    env.OPERATOR_EMAIL = 'operator@test.com';
   });
 
-  afterEach(() => {
-    env.OPERATOR_EMAIL = originalOperatorEmail;
-  });
-
-  describe('sendOrderNotificationToOperator', () => {
+  describe('sendOrderNotificationToManager', () => {
     const orderData = {
       orderNumber: 'ORD-20260315-001',
       customerName: 'Test Client',
       customerEmail: 'client@test.com',
       totalAmount: 5000,
       itemCount: 3,
+      managerEmail: 'manager@test.com',
+      managerName: 'Manager Name',
     };
 
-    it('should send email to operator', async () => {
+    it('should send email to manager', async () => {
       mockSendMail.mockResolvedValue({ messageId: '123' });
 
-      await emailService.sendOrderNotificationToOperator(orderData);
+      await emailService.sendOrderNotificationToManager(orderData);
 
       expect(mockSendMail).toHaveBeenCalledTimes(1);
       const call = mockSendMail.mock.calls[0][0];
+      expect(call.to).toBe('manager@test.com');
       expect(call.subject).toContain('ORD-20260315-001');
       expect(call.html).toContain('Test Client');
-    });
-
-    it('should skip sending if OPERATOR_EMAIL is empty', async () => {
-      env.OPERATOR_EMAIL = '';
-
-      await emailService.sendOrderNotificationToOperator(orderData);
-
-      expect(mockSendMail).not.toHaveBeenCalled();
     });
 
     it('should not throw on send failure (fire-and-forget)', async () => {
       mockSendMail.mockRejectedValue(new Error('SMTP error'));
 
-      await expect(emailService.sendOrderNotificationToOperator(orderData)).resolves.not.toThrow();
+      await expect(emailService.sendOrderNotificationToManager(orderData)).resolves.not.toThrow();
     });
   });
 

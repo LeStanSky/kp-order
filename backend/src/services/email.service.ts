@@ -18,23 +18,24 @@ interface OrderEmailData {
 }
 
 export const emailService = {
-  async sendOrderNotificationToOperator(data: OrderEmailData): Promise<void> {
-    if (!env.OPERATOR_EMAIL) return;
-
+  async sendOrderNotificationToManager(
+    data: OrderEmailData & { managerEmail: string; managerName: string },
+  ): Promise<void> {
     try {
       await transporter.sendMail({
         from: env.SMTP_FROM,
-        to: env.OPERATOR_EMAIL,
+        to: data.managerEmail,
         subject: `Новый заказ ${data.orderNumber}`,
         html: `
           <h2>Новый заказ ${data.orderNumber}</h2>
+          <p><strong>Менеджер:</strong> ${data.managerName}</p>
           <p><strong>Клиент:</strong> ${data.customerName} (${data.customerEmail})</p>
           <p><strong>Позиций:</strong> ${data.itemCount}</p>
           <p><strong>Сумма:</strong> ${data.totalAmount} руб.</p>
         `,
       });
     } catch (error) {
-      logger.error('Failed to send operator notification', {
+      logger.error('Failed to send manager notification', {
         orderNumber: data.orderNumber,
         error: (error as Error).message,
       });

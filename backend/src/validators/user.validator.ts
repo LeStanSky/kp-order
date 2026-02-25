@@ -6,6 +6,7 @@ export const updateUserSchema = z
     email: z.string().email().optional(),
     role: z.enum(['CLIENT', 'MANAGER', 'ADMIN']).optional(),
     isActive: z.boolean().optional(),
+    managerId: z.string().uuid().nullable().optional(),
   })
   .strict();
 

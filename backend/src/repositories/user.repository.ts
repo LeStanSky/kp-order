@@ -13,7 +13,11 @@ export const userRepository = {
   async findById(id: string) {
     return prisma.user.findUnique({
       where: { id },
-      include: { priceGroup: true, clients: { select: { id: true } } },
+      include: {
+        priceGroup: true,
+        clients: { select: { id: true } },
+        manager: { select: { id: true, email: true, name: true } },
+      },
     });
   },
 
@@ -31,7 +35,10 @@ export const userRepository = {
     });
   },
 
-  async update(id: string, data: Partial<CreateUserData & { isActive: boolean }>) {
+  async update(
+    id: string,
+    data: Partial<CreateUserData & { isActive: boolean; managerId: string | null }>,
+  ) {
     return prisma.user.update({
       where: { id },
       data,
@@ -41,7 +48,10 @@ export const userRepository = {
 
   async findAll() {
     return prisma.user.findMany({
-      include: { priceGroup: true },
+      include: {
+        priceGroup: true,
+        manager: { select: { id: true, name: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   },

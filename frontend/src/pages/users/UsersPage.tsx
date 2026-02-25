@@ -48,9 +48,11 @@ export function UsersPage() {
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [editForm, setEditForm] = useState<UpdateUserParams>({});
 
+  const managers = users?.filter((u) => u.role === 'MANAGER') ?? [];
+
   const handleEditOpen = (user: AdminUser) => {
     setEditUser(user);
-    setEditForm({ role: user.role, isActive: user.isActive });
+    setEditForm({ role: user.role, isActive: user.isActive, managerId: user.managerId });
   };
 
   const handleEditClose = () => {
@@ -90,6 +92,7 @@ export function UsersPage() {
               <TableCell>Email</TableCell>
               <TableCell>Роль</TableCell>
               <TableCell>Статус</TableCell>
+              <TableCell>Менеджер</TableCell>
               <TableCell align="right">Действия</TableCell>
             </TableRow>
           </TableHead>
@@ -112,6 +115,7 @@ export function UsersPage() {
                     size="small"
                   />
                 </TableCell>
+                <TableCell>{user.manager?.name ?? '—'}</TableCell>
                 <TableCell align="right">
                   <IconButton
                     size="small"
@@ -144,6 +148,23 @@ export function UsersPage() {
               <MenuItem value="ADMIN">Администратор</MenuItem>
             </Select>
           </FormControl>
+          {editForm.role === 'CLIENT' && (
+            <FormControl fullWidth sx={{ mb: 2 }} data-testid="manager-field">
+              <InputLabel>Менеджер</InputLabel>
+              <Select
+                value={editForm.managerId ?? ''}
+                label="Менеджер"
+                onChange={(e) => setEditForm((f) => ({ ...f, managerId: e.target.value || null }))}
+              >
+                {managers.map((m) => (
+                  <MenuItem key={m.id} value={m.id}>
+                    {m.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
           <FormControlLabel
             control={
               <Switch

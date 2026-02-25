@@ -27,7 +27,7 @@ const mockUser = {
   priceGroupId: 'pg-1',
   password: 'hashed',
   isActive: true,
-  managerId: null,
+  managerId: 'manager-1',
   createdAt: new Date(),
   updatedAt: new Date(),
   priceGroup: {
@@ -38,6 +38,7 @@ const mockUser = {
     updatedAt: new Date(),
   },
   clients: [],
+  manager: { id: 'manager-1', email: 'manager@test.com', name: 'Manager' },
 };
 
 const mockManager = {
@@ -97,7 +98,7 @@ describe('orderService', () => {
       ]);
       mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-001');
       mockOrderRepo.create.mockResolvedValue(mockOrder as any);
-      mockEmailService.sendOrderNotificationToOperator.mockResolvedValue();
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
       mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
 
       const result = await orderService.createOrder('user-1', createInput);
@@ -145,12 +146,14 @@ describe('orderService', () => {
       ]);
       mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-001');
       mockOrderRepo.create.mockResolvedValue(mockOrder as any);
-      mockEmailService.sendOrderNotificationToOperator.mockResolvedValue();
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
       mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
 
       await orderService.createOrder('user-1', createInput);
 
-      expect(mockEmailService.sendOrderNotificationToOperator).toHaveBeenCalled();
+      expect(mockEmailService.sendOrderNotificationToManager).toHaveBeenCalledWith(
+        expect.objectContaining({ managerEmail: 'manager@test.com' }),
+      );
       expect(mockEmailService.sendOrderConfirmationToClient).toHaveBeenCalled();
     });
 
@@ -168,7 +171,7 @@ describe('orderService', () => {
       ]);
       mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-002');
       mockOrderRepo.create.mockResolvedValue({ ...mockOrder, totalAmount: 800 } as any);
-      mockEmailService.sendOrderNotificationToOperator.mockResolvedValue();
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
       mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
 
       await orderService.createOrder('user-1', multiItemInput);
@@ -435,7 +438,7 @@ describe('orderService', () => {
         totalAmount: 6000,
       };
       mockOrderRepo.create.mockResolvedValue(newOrder as any);
-      mockEmailService.sendOrderNotificationToOperator.mockResolvedValue();
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
       mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
 
       const result = await orderService.repeatOrder('order-1', {
@@ -470,7 +473,7 @@ describe('orderService', () => {
       ]);
       mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-003');
       mockOrderRepo.create.mockResolvedValue({ ...mockOrder, totalAmount: 19998 } as any);
-      mockEmailService.sendOrderNotificationToOperator.mockResolvedValue();
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
       mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
 
       await orderService.repeatOrder('order-1', { id: 'user-1', role: 'CLIENT' as const });

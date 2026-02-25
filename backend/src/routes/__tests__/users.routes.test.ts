@@ -168,6 +168,21 @@ describe('Users Routes', () => {
       expect(res.status).toBe(404);
     });
 
+    it('should update managerId for ADMIN', async () => {
+      const token = makeToken();
+      const newManagerId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (db.user.update as jest.Mock).mockResolvedValue({ ...mockUser, managerId: newManagerId });
+
+      const res = await request(app)
+        .patch('/api/users/user-1')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ managerId: newManagerId });
+
+      expect(res.status).toBe(200);
+      expect(res.body.managerId).toBe(newManagerId);
+    });
+
     it('should return 401 without auth', async () => {
       const res = await request(app).patch('/api/users/user-1').send({ role: 'MANAGER' });
 

@@ -20,8 +20,9 @@ const mockUsers = [
     role: 'CLIENT' as const,
     isActive: true,
     priceGroupId: 'pg-1',
-    managerId: null,
+    managerId: 'user-2',
     priceGroup: { id: 'pg-1', name: 'Розница' },
+    manager: { id: 'user-2', name: 'Мария Менеджер' },
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   },
@@ -34,6 +35,7 @@ const mockUsers = [
     priceGroupId: null,
     managerId: null,
     priceGroup: null,
+    manager: null,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   },
@@ -59,16 +61,28 @@ describe('UsersPage', () => {
     renderWithProviders(<UsersPage />);
     await waitFor(() => {
       expect(screen.getByText('Иван Клиент')).toBeInTheDocument();
-      expect(screen.getByText('Мария Менеджер')).toBeInTheDocument();
       expect(screen.getByText('client@test.com')).toBeInTheDocument();
+      expect(screen.getAllByText('Мария Менеджер').length).toBeGreaterThanOrEqual(1);
     });
+  });
+
+  it('shows manager name in table', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Иван Клиент')).toBeInTheDocument();
+    });
+    // "Мария Менеджер" appears twice: as her own row name + as manager of Ivan
+    expect(screen.getAllByText('Мария Менеджер')).toHaveLength(2);
+    // Manager without a manager shows "—"
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 
   it('shows role labels', async () => {
     renderWithProviders(<UsersPage />);
     await waitFor(() => {
       expect(screen.getByText('Клиент')).toBeInTheDocument();
-      expect(screen.getByText('Менеджер')).toBeInTheDocument();
+      // "Менеджер" appears as column header + role chip
+      expect(screen.getAllByText('Менеджер').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -131,6 +145,30 @@ describe('UsersPage', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
+  });
+
+  it('shows manager select in dialog when editing a CLIENT', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Иван Клиент')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByRole('button', { name: /редактировать/i });
+    fireEvent.click(editButtons[0]); // Иван Клиент (CLIENT)
+
+    expect(screen.getByTestId('manager-field')).toBeInTheDocument();
+  });
+
+  it('does not show manager select when editing a MANAGER', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Иван Клиент')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByRole('button', { name: /редактировать/i });
+    fireEvent.click(editButtons[1]); // Мария Менеджер (MANAGER)
+
+    expect(screen.queryByTestId('manager-field')).not.toBeInTheDocument();
   });
 
   it('shows skeleton while loading', async () => {
