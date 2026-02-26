@@ -29,7 +29,13 @@ import EditIcon from '@mui/icons-material/Edit';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import AddIcon from '@mui/icons-material/Add';
 import toast from 'react-hot-toast';
-import { useUsers, useCreateUser, useUpdateUser, useResetPassword } from '@/hooks/useUsers';
+import {
+  useUsers,
+  useCreateUser,
+  useUpdateUser,
+  useResetPassword,
+  usePriceGroups,
+} from '@/hooks/useUsers';
 import type { AdminUser, CreateUserParams, UpdateUserParams } from '@/api/users.api';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -50,10 +56,12 @@ const EMPTY_CREATE: CreateUserParams = {
   password: '',
   role: 'CLIENT',
   managerId: null,
+  priceGroupId: null,
 };
 
 export function UsersPage() {
   const { data: users, isLoading } = useUsers();
+  const { data: priceGroups = [] } = usePriceGroups();
   const { mutate: createUser } = useCreateUser();
   const { mutate: updateUser } = useUpdateUser();
   const { mutate: resetPassword } = useResetPassword();
@@ -71,7 +79,12 @@ export function UsersPage() {
 
   const handleEditOpen = (user: AdminUser) => {
     setEditUser(user);
-    setEditForm({ role: user.role, isActive: user.isActive, managerId: user.managerId });
+    setEditForm({
+      role: user.role,
+      isActive: user.isActive,
+      managerId: user.managerId,
+      priceGroupId: user.priceGroupId,
+    });
   };
 
   const handleEditClose = () => {
@@ -158,6 +171,7 @@ export function UsersPage() {
               <TableCell>Роль</TableCell>
               <TableCell>Статус</TableCell>
               <TableCell>Менеджер</TableCell>
+              <TableCell>Группа цен</TableCell>
               <TableCell align="right">Действия</TableCell>
             </TableRow>
           </TableHead>
@@ -181,6 +195,7 @@ export function UsersPage() {
                   />
                 </TableCell>
                 <TableCell>{user.manager?.name ?? '—'}</TableCell>
+                <TableCell>{user.priceGroup?.name ?? '—'}</TableCell>
                 <TableCell align="right">
                   <IconButton
                     size="small"
@@ -237,6 +252,22 @@ export function UsersPage() {
               </Select>
             </FormControl>
           )}
+
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Группа цен</InputLabel>
+            <Select
+              value={editForm.priceGroupId ?? ''}
+              label="Группа цен"
+              onChange={(e) => setEditForm((f) => ({ ...f, priceGroupId: e.target.value || null }))}
+            >
+              <MenuItem value="">— не задана —</MenuItem>
+              {priceGroups.map((pg) => (
+                <MenuItem key={pg.id} value={pg.id}>
+                  {pg.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <FormControlLabel
             control={
@@ -318,6 +349,24 @@ export function UsersPage() {
               </Select>
             </FormControl>
           )}
+
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Группа цен</InputLabel>
+            <Select
+              value={createForm.priceGroupId ?? ''}
+              label="Группа цен"
+              onChange={(e) =>
+                setCreateForm((f) => ({ ...f, priceGroupId: e.target.value || null }))
+              }
+            >
+              <MenuItem value="">— не задана —</MenuItem>
+              {priceGroups.map((pg) => (
+                <MenuItem key={pg.id} value={pg.id}>
+                  {pg.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCreateClose}>Отмена</Button>

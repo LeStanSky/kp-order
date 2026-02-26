@@ -31,6 +31,12 @@ export interface UpdateUserParams {
   role?: UserRole;
   isActive?: boolean;
   managerId?: string | null;
+  priceGroupId?: string | null;
+}
+
+export interface PriceGroup {
+  id: string;
+  name: string;
 }
 
 export const usersApi = {
@@ -56,5 +62,10 @@ export const usersApi = {
 
   resetPassword: async (id: string, password: string): Promise<void> => {
     await apiClient.post(`/api/users/${id}/reset-password`, { password });
+  },
+
+  getPriceGroups: async (): Promise<PriceGroup[]> => {
+    const { data } = await apiClient.get<PriceGroup[]>('/api/price-groups');
+    return data;
   },
 };

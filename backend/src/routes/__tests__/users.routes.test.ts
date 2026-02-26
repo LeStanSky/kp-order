@@ -185,6 +185,43 @@ describe('Users Routes', () => {
       expect(res.body.managerId).toBe(newManagerId);
     });
 
+    it('should update priceGroupId for ADMIN', async () => {
+      const token = makeToken();
+      const newPriceGroupId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (db.user.update as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        priceGroupId: newPriceGroupId,
+        priceGroup: { id: newPriceGroupId, name: 'Прайс Спот' },
+      });
+
+      const res = await request(app)
+        .patch('/api/users/user-1')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ priceGroupId: newPriceGroupId });
+
+      expect(res.status).toBe(200);
+      expect(res.body.priceGroupId).toBe(newPriceGroupId);
+    });
+
+    it('should set priceGroupId to null for ADMIN', async () => {
+      const token = makeToken();
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (db.user.update as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        priceGroupId: null,
+        priceGroup: null,
+      });
+
+      const res = await request(app)
+        .patch('/api/users/user-1')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ priceGroupId: null });
+
+      expect(res.status).toBe(200);
+      expect(res.body.priceGroupId).toBeNull();
+    });
+
     it('should return 401 without auth', async () => {
       const res = await request(app).patch('/api/users/user-1').send({ role: 'MANAGER' });
 

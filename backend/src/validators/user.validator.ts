@@ -20,6 +20,7 @@ export const updateUserSchema = z
     role: z.enum(['CLIENT', 'MANAGER', 'ADMIN']).optional(),
     isActive: z.boolean().optional(),
     managerId: z.string().uuid().nullable().optional(),
+    priceGroupId: z.string().uuid().nullable().optional(),
   })
   .strict();
 

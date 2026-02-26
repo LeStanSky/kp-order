@@ -8,6 +8,7 @@ vi.mock('@/hooks/useUsers', () => ({
   useCreateUser: vi.fn(),
   useUpdateUser: vi.fn(),
   useResetPassword: vi.fn(),
+  usePriceGroups: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -48,13 +49,21 @@ const mockUsers = [
 beforeEach(async () => {
   vi.clearAllMocks();
 
-  const { useUsers, useCreateUser, useUpdateUser, useResetPassword } =
+  const { useUsers, useCreateUser, useUpdateUser, useResetPassword, usePriceGroups } =
     await import('@/hooks/useUsers');
   vi.mocked(useUsers).mockReturnValue({
     data: mockUsers,
     isLoading: false,
     error: null,
   } as ReturnType<typeof useUsers>);
+  vi.mocked(usePriceGroups).mockReturnValue({
+    data: [
+      { id: 'pg-1', name: 'Прайс основной' },
+      { id: 'pg-2', name: 'Прайс Спот' },
+    ],
+    isLoading: false,
+    error: null,
+  } as ReturnType<typeof usePriceGroups>);
   vi.mocked(useCreateUser).mockReturnValue({
     mutate: vi.fn(),
     isPending: false,
@@ -86,8 +95,8 @@ describe('UsersPage', () => {
     });
     // "Мария Менеджер" appears twice: as her own row name + as manager of Ivan
     expect(screen.getAllByText('Мария Менеджер')).toHaveLength(2);
-    // Manager without a manager shows "—"
-    expect(screen.getByText('—')).toBeInTheDocument();
+    // Manager without a manager/priceGroup shows "—" (at least once)
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows role labels', async () => {

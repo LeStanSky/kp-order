@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi, type CreateUserParams, type UpdateUserParams } from '@/api/users.api';
 
+export function usePriceGroups() {
+  return useQuery({
+    queryKey: ['price-groups'],
+    queryFn: () => usersApi.getPriceGroups(),
+  });
+}
+
 export function useUsers() {
   return useQuery({
     queryKey: ['users'],

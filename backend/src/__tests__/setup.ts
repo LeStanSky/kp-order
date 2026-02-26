@@ -51,6 +51,9 @@ jest.mock('../config/database', () => {
     stockAlertHistory: {
       create: jest.fn(),
     },
+    priceGroup: {
+      findMany: jest.fn(),
+    },
     $transaction: jest.fn(),
     $connect: jest.fn(),
     $disconnect: jest.fn(),
