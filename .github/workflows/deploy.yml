@@ -1,0 +1,38 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        # TODO: настроить после аренды VPS
+        # Добавить в GitHub Secrets:
+        #   SSH_HOST     — IP сервера
+        #   SSH_USER     — пользователь (обычно root или deploy)
+        #   SSH_KEY      — приватный SSH-ключ (cat ~/.ssh/id_ed25519)
+        #   SSH_PORT     — порт SSH (обычно 22)
+        run: echo "Deploy placeholder — настроить после получения VPS"
+
+      # Раскомментировать когда VPS будет готов:
+      # - uses: appleboy/ssh-action@v1
+      #   with:
+      #     host: ${{ secrets.SSH_HOST }}
+      #     username: ${{ secrets.SSH_USER }}
+      #     key: ${{ secrets.SSH_KEY }}
+      #     port: ${{ secrets.SSH_PORT }}
+      #     script: |
+      #       set -e
+      #       cd /opt/kporder
+      #       git pull origin master
+      #       pnpm install --frozen-lockfile
+      #       pnpm --filter backend exec prisma migrate deploy
+      #       pnpm --filter backend exec prisma generate
+      #       pnpm --filter backend build
+      #       pnpm --filter frontend build
+      #       sudo systemctl restart kporder
+      #       echo "Deploy complete"
