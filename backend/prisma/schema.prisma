@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENT
+  MANAGER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  name         String
+  role         UserRole  @default(CLIENT)
+  priceGroupId String?   @map("price_group_id")
+  managerId    String?   @map("manager_id")
+  isActive            Boolean   @default(true)
+  mustChangePassword  Boolean   @default(false) @map("must_change_password")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  priceGroup    PriceGroup?    @relation(fields: [priceGroupId], references: [id])
+  manager       User?          @relation("ManagerClients", fields: [managerId], references: [id])
+  clients       User[]         @relation("ManagerClients")
+  refreshTokens RefreshToken[]
+  orders        Order[]
+  createdAlerts StockAlert[]   @relation("AlertCreator")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PriceGroup {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  externalId String? @unique @map("external_id")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  users  User[]
+  prices Price[]
+
+  @@map("price_groups")
+}
+
+model SyncGroup {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("sync_groups")
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  externalId  String    @unique @map("external_id")
+  name        String
+  cleanName   String    @map("clean_name")
+  description String?
+  category    String?
+  unit        String?
+  imageUrl        String?   @map("image_url")
+  characteristics Json?
+  expiryDate      DateTime? @map("expiry_date")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  stocks      Stock[]
+  prices      Price[]
+  orderItems  OrderItem[]
+  stockAlerts StockAlert[]
+
+  @@index([cleanName])
+  @@index([expiryDate])
+  @@index([category])
+  @@map("products")
+}
+
+model Stock {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  quantity  Float    @default(0)
+  warehouse String?
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, warehouse])
+  @@map("stocks")
+}
+
+model Price {
+  id           String   @id @default(uuid())
+  productId    String   @map("product_id")
+  priceGroupId String   @map("price_group_id")
+  value        Float    @default(0)
+  currency     String   @default("RUB")
+  updatedAt    DateTime @updatedAt
+
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  priceGroup PriceGroup @relation(fields: [priceGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, priceGroupId])
+  @@map("prices")
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique @map("order_number")
+  userId      String      @map("user_id")
+  status      OrderStatus @default(PENDING)
+  comment     String?
+  totalAmount Float       @map("total_amount")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@index([userId, createdAt])
+  @@index([orderNumber])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String @map("order_id")
+  productId String @map("product_id")
+  quantity  Int
+  price     Float
+  currency  String @default("RUB")
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model StockAlert {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdById String   @map("created_by_id")
+  createdBy   User     @relation("AlertCreator", fields: [createdById], references: [id])
+  minStock    Int      @map("min_stock")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  history     StockAlertHistory[]
+
+  @@unique([productId, createdById])
+  @@map("stock_alerts")
+}
+
+model StockAlertHistory {
+  id           String     @id @default(uuid())
+  stockAlertId String     @map("stock_alert_id")
+  stockAlert   StockAlert @relation(fields: [stockAlertId], references: [id], onDelete: Cascade)
+  stockValue   Float      @map("stock_value")
+  sentAt       DateTime   @default(now()) @map("sent_at")
+
+  @@map("stock_alert_history")
+}

@@ -1,0 +1,132 @@
+import { useNavigate } from 'react-router-dom';
+import {
+  Drawer,
+  Box,
+  Typography,
+  IconButton,
+  Button,
+  Divider,
+  Stack,
+  List,
+  ListItem,
+  Alert,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CloseIcon from '@mui/icons-material/Close';
+import { useCartStore } from '@/store/cartStore';
+import { formatPrice } from '@/utils/productDisplay';
+import { validateCart } from '@/utils/cartValidation';
+
+interface CartDrawerProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function CartDrawer({ open, onClose }: CartDrawerProps) {
+  const navigate = useNavigate();
+  const { items, updateQuantity, removeItem, clearCart, totalAmount } = useCartStore();
+
+  const violations = validateCart(items);
+
+  const handleCheckout = () => {
+    onClose();
+    navigate('/cart');
+  };
+
+  const handleQuantityChange = (productId: string, currentQty: number, delta: number) => {
+    const newQty = currentQty + delta;
+    if (newQty <= 0) {
+      removeItem(productId);
+    } else {
+      updateQuantity(productId, newQty);
+    }
+  };
+
+  return (
+    <Drawer anchor="right" open={open} onClose={onClose}>
+      <Box sx={{ width: 360, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6">Корзина</Typography>
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            {items.length > 0 && (
+              <Button size="small" color="error" onClick={clearCart}>
+                Очистить
+              </Button>
+            )}
+            <IconButton onClick={onClose} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </Box>
+        <Divider />
+
+        {items.length === 0 ? (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography color="text.secondary">Корзина пуста</Typography>
+          </Box>
+        ) : (
+          <>
+            <List sx={{ flexGrow: 1, overflowY: 'auto' }}>
+              {items.map((item) => (
+                <ListItem
+                  key={item.productId}
+                  sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 2 }}
+                >
+                  <Typography variant="body1">{item.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {formatPrice(item.price)} {item.currency}
+                  </Typography>
+                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
+                    <IconButton
+                      size="small"
+                      aria-label="-"
+                      onClick={() => handleQuantityChange(item.productId, item.quantity, -1)}
+                    >
+                      <RemoveIcon fontSize="small" />
+                    </IconButton>
+                    <Typography>{item.quantity}</Typography>
+                    <IconButton
+                      size="small"
+                      aria-label="+"
+                      onClick={() => handleQuantityChange(item.productId, item.quantity, 1)}
+                    >
+                      <AddIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => removeItem(item.productId)}
+                      color="error"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </ListItem>
+              ))}
+            </List>
+
+            <Divider />
+            <Box sx={{ p: 2 }}>
+              {violations.length > 0 && (
+                <Stack spacing={0.5} sx={{ mb: 2 }}>
+                  {violations.map((v, i) => (
+                    <Alert key={i} severity="warning" sx={{ py: 0.25, fontSize: '0.75rem' }}>
+                      {v.message}
+                    </Alert>
+                  ))}
+                </Stack>
+              )}
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Итого: {formatPrice(totalAmount())} RUB
+              </Typography>
+              <Button variant="contained" fullWidth onClick={handleCheckout}>
+                Оформить заказ
+              </Button>
+            </Box>
+          </>
+        )}
+      </Box>
+    </Drawer>
+  );
+}
