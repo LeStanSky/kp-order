@@ -15,14 +15,18 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PeopleIcon from '@mui/icons-material/People';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
+import { useThemeStore } from '@/store/themeStore';
 
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, clearAuth, hasRole } = useAuthStore();
   const totalItems = useCartStore((s) => s.totalItems());
+  const { mode, toggleMode } = useThemeStore();
 
   const handleLogout = () => {
     clearAuth();
@@ -127,6 +131,14 @@ export function Header() {
         <Typography variant="body2" sx={{ mx: 1 }}>
           {user?.name}
         </Typography>
+
+        <IconButton
+          color="inherit"
+          onClick={toggleMode}
+          title={mode === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+        >
+          {mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+        </IconButton>
 
         <Button
           color="inherit"

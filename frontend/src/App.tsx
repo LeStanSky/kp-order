@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { theme } from '@/config/theme';
+import { createAppTheme } from '@/config/theme';
+import { useThemeStore } from '@/store/themeStore';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/pages/auth/LoginPage';
@@ -32,6 +34,9 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const { mode } = useThemeStore();
+  const theme = useMemo(() => createAppTheme(mode), [mode]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
