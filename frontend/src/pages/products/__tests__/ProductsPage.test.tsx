@@ -48,7 +48,7 @@ beforeEach(async () => {
     data: mockProducts,
     isLoading: false,
     error: null,
-  } as ReturnType<typeof useProducts>);
+  } as unknown as ReturnType<typeof useProducts>);
   vi.mocked(useCategories).mockReturnValue({
     data: mockCategories,
     isLoading: false,
@@ -83,7 +83,7 @@ describe('ProductsPage', () => {
       data: undefined,
       isLoading: true,
       error: null,
-    } as ReturnType<typeof useProducts>);
+    } as unknown as ReturnType<typeof useProducts>);
 
     const { container } = renderWithProviders(<ProductsPage />);
     // Skeletons render as rectangular placeholder elements
@@ -134,7 +134,7 @@ describe('ProductsPage', () => {
       },
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useProducts>);
+    } as unknown as ReturnType<typeof useProducts>);
 
     renderWithProviders(<ProductsPage />);
     await waitFor(() => {
@@ -161,7 +161,7 @@ describe('ProductsPage', () => {
       },
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useProducts>);
+    } as unknown as ReturnType<typeof useProducts>);
 
     renderWithProviders(<ProductsPage />);
     await waitFor(() => {

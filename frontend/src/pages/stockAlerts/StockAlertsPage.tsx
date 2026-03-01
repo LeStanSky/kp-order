@@ -63,8 +63,9 @@ export function StockAlertsPage() {
           setDialogOpen(false);
           toast.success('Оповещение добавлено');
         },
-        onError: (err: any) => {
-          const message = err?.response?.data?.message ?? 'Ошибка при создании оповещения';
+        onError: (err: unknown) => {
+          const apiErr = err as { response?: { data?: { message?: string } } };
+          const message = apiErr?.response?.data?.message ?? 'Ошибка при создании оповещения';
           toast.error(message);
         },
       },
