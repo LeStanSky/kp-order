@@ -39,7 +39,7 @@ describe('stockAlertService', () => {
 
   describe('createAlert', () => {
     it('should create an alert', async () => {
-      mockRepo.create.mockResolvedValue(mockAlert as any);
+      (mockRepo.create as jest.Mock).mockResolvedValue(mockAlert);
 
       const result = await stockAlertService.createAlert('manager-1', {
         productId: 'prod-1',
@@ -68,13 +68,13 @@ describe('stockAlertService', () => {
     const query = { page: 1, limit: 20 };
 
     it('should return all alerts for ADMIN', async () => {
-      mockRepo.findAll.mockResolvedValue({
+      (mockRepo.findAll as jest.Mock).mockResolvedValue({
         alerts: [mockAlert],
         total: 1,
         page: 1,
         limit: 20,
         totalPages: 1,
-      } as any);
+      });
 
       const result = await stockAlertService.getAlerts(mockAdmin, query);
 
@@ -83,13 +83,13 @@ describe('stockAlertService', () => {
     });
 
     it('should filter by createdById for MANAGER', async () => {
-      mockRepo.findAll.mockResolvedValue({
+      (mockRepo.findAll as jest.Mock).mockResolvedValue({
         alerts: [mockAlert],
         total: 1,
         page: 1,
         limit: 20,
         totalPages: 1,
-      } as any);
+      });
 
       await stockAlertService.getAlerts(mockManager, query);
 
@@ -101,13 +101,13 @@ describe('stockAlertService', () => {
     });
 
     it('should return pagination info', async () => {
-      mockRepo.findAll.mockResolvedValue({
+      (mockRepo.findAll as jest.Mock).mockResolvedValue({
         alerts: [],
         total: 50,
         page: 2,
         limit: 10,
         totalPages: 5,
-      } as any);
+      });
 
       const result = await stockAlertService.getAlerts(mockAdmin, { page: 2, limit: 10 });
 
@@ -117,7 +117,7 @@ describe('stockAlertService', () => {
 
   describe('getAlertById', () => {
     it('should return alert for ADMIN', async () => {
-      mockRepo.findById.mockResolvedValue(mockAlert as any);
+      (mockRepo.findById as jest.Mock).mockResolvedValue(mockAlert);
 
       const result = await stockAlertService.getAlertById('alert-1', mockAdmin);
 
@@ -125,7 +125,7 @@ describe('stockAlertService', () => {
     });
 
     it('should return own alert for MANAGER', async () => {
-      mockRepo.findById.mockResolvedValue(mockAlert as any);
+      (mockRepo.findById as jest.Mock).mockResolvedValue(mockAlert);
 
       const result = await stockAlertService.getAlertById('alert-1', mockManager);
 
@@ -141,7 +141,7 @@ describe('stockAlertService', () => {
     });
 
     it('should throw ForbiddenError for another manager', async () => {
-      mockRepo.findById.mockResolvedValue(mockAlert as any);
+      (mockRepo.findById as jest.Mock).mockResolvedValue(mockAlert);
 
       await expect(
         stockAlertService.getAlertById('alert-1', { id: 'manager-2', role: 'MANAGER' }),
@@ -152,8 +152,8 @@ describe('stockAlertService', () => {
   describe('updateAlert', () => {
     it('should update alert', async () => {
       const updated = { ...mockAlert, minStock: 20 };
-      mockRepo.findById.mockResolvedValue(mockAlert as any);
-      mockRepo.update.mockResolvedValue(updated as any);
+      (mockRepo.findById as jest.Mock).mockResolvedValue(mockAlert);
+      (mockRepo.update as jest.Mock).mockResolvedValue(updated);
 
       const result = await stockAlertService.updateAlert('alert-1', { minStock: 20 }, mockManager);
 
@@ -162,7 +162,7 @@ describe('stockAlertService', () => {
     });
 
     it('should throw ForbiddenError for wrong manager', async () => {
-      mockRepo.findById.mockResolvedValue(mockAlert as any);
+      (mockRepo.findById as jest.Mock).mockResolvedValue(mockAlert);
 
       await expect(
         stockAlertService.updateAlert('alert-1', { minStock: 5 }, { id: 'other', role: 'MANAGER' }),
@@ -180,8 +180,8 @@ describe('stockAlertService', () => {
 
   describe('deleteAlert', () => {
     it('should delete alert', async () => {
-      mockRepo.findById.mockResolvedValue(mockAlert as any);
-      mockRepo.delete.mockResolvedValue(mockAlert as any);
+      (mockRepo.findById as jest.Mock).mockResolvedValue(mockAlert);
+      (mockRepo.delete as jest.Mock).mockResolvedValue(mockAlert);
 
       await stockAlertService.deleteAlert('alert-1', mockManager);
 
@@ -189,7 +189,7 @@ describe('stockAlertService', () => {
     });
 
     it('should throw ForbiddenError for wrong manager', async () => {
-      mockRepo.findById.mockResolvedValue(mockAlert as any);
+      (mockRepo.findById as jest.Mock).mockResolvedValue(mockAlert);
 
       await expect(
         stockAlertService.deleteAlert('alert-1', { id: 'other', role: 'MANAGER' }),
@@ -204,9 +204,9 @@ describe('stockAlertService', () => {
         product: { id: 'prod-1', cleanName: 'Beer', stocks: [{ quantity: 5 }] },
         history: [],
       };
-      mockRepo.findActiveAlerts.mockResolvedValue([alertWithLowStock] as any);
+      (mockRepo.findActiveAlerts as jest.Mock).mockResolvedValue([alertWithLowStock]);
       mockEmail.sendStockAlertNotification.mockResolvedValue();
-      mockRepo.createHistory.mockResolvedValue({} as any);
+      (mockRepo.createHistory as jest.Mock).mockResolvedValue({});
 
       await stockAlertService.evaluateAlerts();
 
@@ -225,7 +225,7 @@ describe('stockAlertService', () => {
         product: { id: 'prod-1', cleanName: 'Beer', stocks: [{ quantity: 15 }] },
         history: [],
       };
-      mockRepo.findActiveAlerts.mockResolvedValue([alertWithHighStock] as any);
+      (mockRepo.findActiveAlerts as jest.Mock).mockResolvedValue([alertWithHighStock]);
 
       await stockAlertService.evaluateAlerts();
 
@@ -239,7 +239,7 @@ describe('stockAlertService', () => {
         product: { id: 'prod-1', cleanName: 'Beer', stocks: [{ quantity: 5 }] },
         history: [{ stockValue: 5, sentAt: recentlySent }],
       };
-      mockRepo.findActiveAlerts.mockResolvedValue([alertWithCooldown] as any);
+      (mockRepo.findActiveAlerts as jest.Mock).mockResolvedValue([alertWithCooldown]);
 
       await stockAlertService.evaluateAlerts();
 
@@ -252,9 +252,9 @@ describe('stockAlertService', () => {
         product: { id: 'prod-1', cleanName: 'Beer', stocks: [{ quantity: 5 }] },
         history: [{ stockValue: 5, sentAt: yesterday }],
       };
-      mockRepo.findActiveAlerts.mockResolvedValue([alertWithOldHistory] as any);
+      (mockRepo.findActiveAlerts as jest.Mock).mockResolvedValue([alertWithOldHistory]);
       mockEmail.sendStockAlertNotification.mockResolvedValue();
-      mockRepo.createHistory.mockResolvedValue({} as any);
+      (mockRepo.createHistory as jest.Mock).mockResolvedValue({});
 
       await stockAlertService.evaluateAlerts();
 
@@ -272,9 +272,9 @@ describe('stockAlertService', () => {
         },
         history: [],
       };
-      mockRepo.findActiveAlerts.mockResolvedValue([alertMultiWarehouse] as any);
+      (mockRepo.findActiveAlerts as jest.Mock).mockResolvedValue([alertMultiWarehouse]);
       mockEmail.sendStockAlertNotification.mockResolvedValue();
-      mockRepo.createHistory.mockResolvedValue({} as any);
+      (mockRepo.createHistory as jest.Mock).mockResolvedValue({});
 
       await stockAlertService.evaluateAlerts();
 
