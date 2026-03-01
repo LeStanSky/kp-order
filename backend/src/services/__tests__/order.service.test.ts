@@ -50,17 +50,6 @@ const mockManager = {
   clients: [{ id: 'user-1' }, { id: 'user-2' }],
 };
 
-const mockAdmin = {
-  ...mockUser,
-  id: 'admin-1',
-  email: 'admin@test.com',
-  name: 'Admin',
-  role: 'ADMIN' as const,
-  priceGroupId: null,
-  priceGroup: null,
-  clients: [],
-};
-
 const mockOrder = {
   id: 'order-1',
   orderNumber: 'ORD-20260315-001',
@@ -154,6 +143,22 @@ describe('orderService', () => {
       expect(mockEmailService.sendOrderNotificationToManager).toHaveBeenCalledWith(
         expect.objectContaining({ managerEmail: 'manager@test.com' }),
       );
+      expect(mockEmailService.sendOrderConfirmationToClient).toHaveBeenCalled();
+    });
+
+    it('should skip manager notification when user has no manager', async () => {
+      const userWithoutManager = { ...mockUser, manager: null };
+      mockUserRepo.findById.mockResolvedValue(userWithoutManager as any);
+      (db.price.findMany as jest.Mock).mockResolvedValue([
+        { productId: 'prod-1', value: 2500, currency: 'RUB' },
+      ]);
+      mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-001');
+      mockOrderRepo.create.mockResolvedValue(mockOrder as any);
+      mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+
+      await orderService.createOrder('user-1', createInput);
+
+      expect(mockEmailService.sendOrderNotificationToManager).not.toHaveBeenCalled();
       expect(mockEmailService.sendOrderConfirmationToClient).toHaveBeenCalled();
     });
 
