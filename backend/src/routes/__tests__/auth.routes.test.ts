@@ -241,6 +241,25 @@ describe('Auth Routes', () => {
       expect(res.body.email).toBe('test@example.com');
     });
 
+    it('should return user profile with price group', async () => {
+      const token = makeToken({ id: 'user-1' });
+
+      (db.user.findUnique as jest.Mock).mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        name: 'Test User',
+        role: 'CLIENT',
+        priceGroupId: 'pg-1',
+        priceGroup: { id: 'pg-1', name: 'Retail' },
+        isActive: true,
+      });
+
+      const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.priceGroup).toEqual({ id: 'pg-1', name: 'Retail' });
+    });
+
     it('should return 401 without auth', async () => {
       const res = await request(app).get('/api/auth/me');
       expect(res.status).toBe(401);
