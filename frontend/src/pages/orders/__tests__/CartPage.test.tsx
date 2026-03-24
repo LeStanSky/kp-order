@@ -13,6 +13,11 @@ vi.mock('@/api/orders.api', () => ({
   },
 }));
 
+vi.mock('@/hooks/useOrders', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useOrders')>();
+  return { ...actual };
+});
+
 vi.mock('react-hot-toast', () => ({
   default: { error: vi.fn(), success: vi.fn() },
 }));
@@ -61,16 +66,14 @@ describe('CartPage', () => {
   });
 
   it('enables submit button when cart is valid (KEG present)', () => {
-    useCartStore
-      .getState()
-      .addItem({
-        productId: 'k1',
-        name: 'Jaws PET KEG 20л',
-        price: 3600,
-        currency: 'RUB',
-        quantity: 1,
-        isKeg: true,
-      });
+    useCartStore.getState().addItem({
+      productId: 'k1',
+      name: 'Jaws PET KEG 20л',
+      price: 3600,
+      currency: 'RUB',
+      quantity: 1,
+      isKeg: true,
+    });
     renderWithProviders(<CartPage />);
     expect(screen.getByRole('button', { name: /подтвердить/i })).not.toBeDisabled();
   });
