@@ -10,7 +10,7 @@ const PRICE_TYPES = [
   'Прайс Градусы',
   'Прайс Пив.com',
   'Прайс beer.exe',
-  'Прайс спец мьельнир',
+  'Прайс ХС',
 ];
 
 function makePrices(base: number) {
