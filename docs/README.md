@@ -48,10 +48,10 @@ pnpm --filter frontend dev  # http://localhost:5173
 
 | Email                  | Пароль      | Роль    |
 | ---------------------- | ----------- | ------- |
-| admin@erpstock.local   | Admin123!   | ADMIN   |
-| manager@erpstock.local | Manager123! | MANAGER |
-| client1@erpstock.local | Client123!  | CLIENT  |
-| client2@erpstock.local | Client123!  | CLIENT  |
+| admin@erpstock.local   | password123 | ADMIN   |
+| manager@erpstock.local | password123 | MANAGER |
+| client1@erpstock.local | password123 | CLIENT  |
+| client2@erpstock.local | password123 | CLIENT  |
 
 ### Тесты
 
