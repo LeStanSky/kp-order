@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import toast from 'react-hot-toast';
 import { authApi } from '@/api/auth.api';
+import { useAuthStore } from '@/store/authStore';
 
 const schema = z
   .object({
@@ -29,6 +30,7 @@ type FormData = z.infer<typeof schema>;
 
 export function ChangePasswordPage() {
   const navigate = useNavigate();
+  const { clearMustChangePassword } = useAuthStore();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -43,8 +45,9 @@ export function ChangePasswordPage() {
     setLoading(true);
     try {
       await authApi.changePassword(data.newPassword);
+      clearMustChangePassword();
       toast.success('Пароль успешно изменён');
-      navigate('/products');
+      navigate('/products', { replace: true });
     } catch {
       toast.error('Не удалось изменить пароль');
     } finally {
@@ -55,9 +58,12 @@ export function ChangePasswordPage() {
   return (
     <Container maxWidth="xs">
       <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-          KPOrder
-        </Typography>
+        <Box
+          component="img"
+          src="/logo-color.png"
+          alt="Красный Пропеллер"
+          sx={{ height: 80, mb: 3 }}
+        />
         <Paper sx={{ p: 4, width: '100%' }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
             Смена пароля

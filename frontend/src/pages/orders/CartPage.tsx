@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
@@ -23,7 +23,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import toast from 'react-hot-toast';
 import { useCartStore } from '@/store/cartStore';
-import { ordersApi } from '@/api/orders.api';
+import { useCreateOrder } from '@/hooks/useOrders';
 import { formatPrice } from '@/utils/productDisplay';
 import { validateCart } from '@/utils/cartValidation';
 
@@ -34,7 +34,7 @@ interface CommentForm {
 export function CartPage() {
   const navigate = useNavigate();
   const { items, totalAmount, clearCart, updateQuantity, removeItem } = useCartStore();
-  const [loading, setLoading] = useState(false);
+  const createOrder = useCreateOrder();
 
   const { register, handleSubmit } = useForm<CommentForm>();
 
@@ -53,21 +53,23 @@ export function CartPage() {
     else updateQuantity(productId, next);
   };
 
-  const onSubmit = async (data: CommentForm) => {
-    setLoading(true);
-    try {
-      await ordersApi.createOrder({
+  const onSubmit = (data: CommentForm) => {
+    createOrder.mutate(
+      {
         items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
         comment: data.comment || undefined,
-      });
-      clearCart();
-      toast.success('Заказ успешно создан!');
-      navigate('/orders');
-    } catch {
-      toast.error('Ошибка при создании заказа');
-    } finally {
-      setLoading(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          clearCart();
+          toast.success('Заказ успешно создан!');
+          navigate('/orders');
+        },
+        onError: () => {
+          toast.error('Ошибка при создании заказа');
+        },
+      },
+    );
   };
 
   if (items.length === 0) return null;
@@ -162,8 +164,12 @@ export function CartPage() {
         />
 
         <Stack direction="row" spacing={2}>
-          <Button variant="contained" type="submit" disabled={loading || hasViolations}>
-            {loading ? <CircularProgress size={20} /> : 'Подтвердить заказ'}
+          <Button
+            variant="contained"
+            type="submit"
+            disabled={createOrder.isPending || hasViolations}
+          >
+            {createOrder.isPending ? <CircularProgress size={20} /> : 'Подтвердить заказ'}
           </Button>
           <Button variant="outlined" onClick={() => navigate('/products')}>
             Продолжить покупки

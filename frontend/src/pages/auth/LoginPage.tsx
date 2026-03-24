@@ -40,14 +40,15 @@ export function LoginPage() {
     setLoading(true);
     try {
       const response = await authApi.login(data.email, data.password);
-      setAuth(response.user, {
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-      });
+      setAuth(
+        response.user,
+        { accessToken: response.accessToken, refreshToken: response.refreshToken },
+        response.mustChangePassword,
+      );
       if (response.mustChangePassword) {
-        navigate('/change-password');
+        navigate('/change-password', { replace: true });
       } else {
-        navigate('/products');
+        navigate('/products', { replace: true });
       }
     } catch {
       toast.error('Неверный email или пароль');
@@ -59,9 +60,12 @@ export function LoginPage() {
   return (
     <Container maxWidth="xs">
       <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-          KPOrder
-        </Typography>
+        <Box
+          component="img"
+          src="/logo-color.png"
+          alt="Красный Пропеллер"
+          sx={{ height: 80, mb: 3 }}
+        />
         <Paper sx={{ p: 4, width: '100%' }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Войти

@@ -67,7 +67,10 @@
 | A   | @   | `<IP вашего VPS>` | 300 |
 | A   | www | `<IP вашего VPS>` | 300 |
 
-4. Подождать 5–15 минут (в рамках reg.ru обычно быстро)
+4. **Удалить дефолтную A-запись** reg.ru хостинга (обычно указывает на `31.31.198.x`).
+   Если оставить две A-записи, DNS будет возвращать оба IP — браузер может попасть
+   на панель `dnsadmin.hosting.reg.ru` вместо вашего VPS, и API-запросы фронта уйдут не туда.
+5. Подождать 5–15 минут (в рамках reg.ru обычно быстро)
 
 ### Вариант B: Домен куплен у другого регистратора
 
@@ -88,7 +91,8 @@
 ```bash
 # С локальной машины (через 5-30 мин после настройки)
 nslookup yourdomain.ru
-# Должен показать IP вашего VPS
+# Должен показать ТОЛЬКО IP вашего VPS (одну A-запись).
+# Если показывает два IP — удалите лишнюю A-запись в панели DNS.
 
 ping yourdomain.ru
 # Должен пинговаться по IP VPS
@@ -524,6 +528,14 @@ Certbot автоматически:
 - Модифицирует конфигурацию Nginx (добавит SSL-блок)
 - Настроит auto-renewal (проверить: `sudo certbot renew --dry-run`)
 
+> **Не забудьте** обновить `FRONTEND_URL` в `backend/.env` с `http://` на `https://`
+> и перезапустить backend — иначе CORS будет блокировать запросы из браузера:
+>
+> ```bash
+> sed -i 's|FRONTEND_URL=http://|FRONTEND_URL=https://|' /opt/kporder/app/backend/.env
+> sudo systemctl restart kporder
+> ```
+
 ### 7.5. Финальная конфигурация Nginx (после certbot)
 
 Certbot создаст конфигурацию автоматически. Убедиться, что она содержит:
@@ -678,25 +690,47 @@ curl -vI https://yourdomain.ru 2>&1 | grep "SSL certificate"
 
 В репозитории: **Settings** → **Secrets and variables** → **Actions** → **New repository secret**:
 
-| Secret     | Значение                                        |
-| ---------- | ----------------------------------------------- |
-| `SSH_HOST` | IP-адрес VPS                                    |
-| `SSH_USER` | `deploy`                                        |
-| `SSH_KEY`  | Содержимое `~/.ssh/id_ed25519` (приватный ключ) |
-| `SSH_PORT` | `22` (или ваш порт)                             |
+| Secret     | Значение                                               |
+| ---------- | ------------------------------------------------------ |
+| `SSH_HOST` | IP-адрес VPS                                           |
+| `SSH_USER` | `deploy`                                               |
+| `SSH_KEY`  | Содержимое приватного ключа (без passphrase, см. ниже) |
+| `SSH_PORT` | `22` (или ваш порт)                                    |
 
-> Чтобы получить приватный ключ:
+> **Важно**: ключ для CD **должен быть без passphrase** — `appleboy/ssh-action` не поддерживает
+> интерактивный ввод пароля и упадёт с ошибкой `ssh: this private key is passphrase protected`.
+>
+> Рекомендуется сгенерировать **отдельный ключ** для CD:
 >
 > ```bash
-> cat ~/.ssh/id_ed25519
+> # На локальной машине (Linux/macOS)
+> ssh-keygen -t ed25519 -C "github-actions-cd" -f ~/.ssh/kporder_cd -N ""
+>
+> # На Windows PowerShell — без флага -N, нажать Enter дважды при запросе passphrase:
+> ssh-keygen -t ed25519 -C "github-actions-cd" -f $HOME/.ssh/kporder_cd
+> ```
+>
+> Добавить публичный ключ на сервер:
+>
+> ```bash
+> # Linux/macOS
+> ssh-copy-id -i ~/.ssh/kporder_cd.pub deploy@<IP_VPS>
+>
+> # Windows PowerShell
+> type $HOME\.ssh\kporder_cd.pub | ssh deploy@<IP_VPS> "cat >> ~/.ssh/authorized_keys"
+> ```
+>
+> Скопировать **приватный** ключ в GitHub Secret `SSH_KEY`:
+>
+> ```bash
+> cat ~/.ssh/kporder_cd
 > ```
 >
 > Скопировать **весь текст** включая `-----BEGIN/END-----`.
 
-### 10.2. Обновить deploy.yml
+### 10.2. deploy.yml
 
-Файл `.github/workflows/deploy.yml` уже содержит закомментированный скрипт деплоя.
-Раскомментировать и адаптировать:
+Файл `.github/workflows/deploy.yml` уже настроен:
 
 ```yaml
 name: Deploy

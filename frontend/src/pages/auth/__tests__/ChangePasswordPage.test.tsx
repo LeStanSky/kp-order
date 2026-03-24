@@ -57,7 +57,7 @@ describe('ChangePasswordPage', () => {
 
     await waitFor(() => {
       expect(authApi.changePassword).toHaveBeenCalledWith('NewPass123!');
-      expect(mockNavigate).toHaveBeenCalledWith('/products');
+      expect(mockNavigate).toHaveBeenCalledWith('/products', { replace: true });
     });
   });
 

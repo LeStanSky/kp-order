@@ -44,11 +44,15 @@ apiClient.interceptors.response.use(
 
       try {
         const { authApi } = await import('./auth.api');
+        const currentMustChange = useAuthStore.getState().mustChangePassword;
         const response = await authApi.refresh(refreshToken);
-        useAuthStore.getState().setAuth(response.user, {
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-        });
+        useAuthStore
+          .getState()
+          .setAuth(
+            response.user,
+            { accessToken: response.accessToken, refreshToken: response.refreshToken },
+            currentMustChange,
+          );
         originalRequest.headers['Authorization'] = `Bearer ${response.accessToken}`;
         return apiClient(originalRequest);
       } catch {

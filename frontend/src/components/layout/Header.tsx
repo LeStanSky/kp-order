@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AppBar,
   Toolbar,
@@ -40,8 +41,10 @@ export function Header() {
   const { mode, toggleMode } = useThemeStore();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const queryClient = useQueryClient();
 
   const handleLogout = () => {
+    queryClient.clear();
     clearAuth();
     navigate('/login');
   };
@@ -72,7 +75,7 @@ export function Header() {
   ];
 
   const activeSx = (active: boolean) => ({
-    borderBottom: active ? '2px solid white' : '2px solid transparent',
+    borderBottom: active ? '2px solid #E42127' : '2px solid transparent',
     borderRadius: 0,
     pb: 0.5,
   });
@@ -80,18 +83,18 @@ export function Header() {
   return (
     <AppBar position="static">
       <Toolbar sx={{ gap: 0.5, minHeight: { xs: 48 }, px: { xs: 1, md: 2 } }}>
-        <Typography
-          variant="h6"
-          component="div"
+        <Box
+          component="img"
+          src="/logo-white.png"
+          alt="Красный Пропеллер"
           sx={{
+            height: { xs: 28, md: 36 },
             mr: { xs: 1, md: 2 },
-            flexGrow: { xs: 1, md: 0 },
-            fontWeight: 700,
-            letterSpacing: 1,
+            flexShrink: 0,
+            cursor: 'pointer',
           }}
-        >
-          KPOrder
-        </Typography>
+          onClick={() => navigate('/products')}
+        />
 
         <Divider
           orientation="vertical"

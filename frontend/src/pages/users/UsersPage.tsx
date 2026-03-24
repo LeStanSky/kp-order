@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import {
   Box,
   Typography,
@@ -28,6 +28,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import AddIcon from '@mui/icons-material/Add';
+import type { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
 import {
   useUsers,
@@ -37,6 +38,16 @@ import {
   usePriceGroups,
 } from '@/hooks/useUsers';
 import type { AdminUser, CreateUserParams, UpdateUserParams } from '@/api/users.api';
+
+function extractErrorMessage(err: unknown, fallback: string): string {
+  const data = (err as AxiosError<{ error?: string; errors?: Record<string, string[]> }>)?.response
+    ?.data;
+  if (data?.errors) {
+    const msgs = Object.values(data.errors).flat();
+    if (msgs.length) return msgs.join('; ');
+  }
+  return data?.error ?? fallback;
+}
 
 const ROLE_LABELS: Record<string, string> = {
   CLIENT: 'Клиент',
@@ -71,9 +82,11 @@ export function UsersPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState<CreateUserParams>(EMPTY_CREATE);
+  const [createSubmitted, setCreateSubmitted] = useState(false);
 
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
   const [resetPasswordValue, setResetPasswordValue] = useState('');
+  const [resetSubmitted, setResetSubmitted] = useState(false);
 
   const managers = users?.filter((u) => u.role === 'MANAGER') ?? [];
 
@@ -101,13 +114,14 @@ export function UsersPage() {
           toast.success('Пользователь обновлён');
           handleEditClose();
         },
-        onError: () => toast.error('Не удалось обновить пользователя'),
+        onError: (err) => toast.error(extractErrorMessage(err, 'Не удалось обновить пользователя')),
       },
     );
   };
 
   const handleCreateOpen = () => {
     setCreateForm(EMPTY_CREATE);
+    setCreateSubmitted(false);
     setCreateOpen(true);
   };
 
@@ -115,19 +129,28 @@ export function UsersPage() {
     setCreateOpen(false);
   };
 
-  const handleCreate = () => {
+  const createValid =
+    createForm.name.length >= 2 &&
+    createForm.email.includes('@') &&
+    createForm.password.length >= 8;
+
+  const handleCreate = (e?: FormEvent) => {
+    e?.preventDefault();
+    setCreateSubmitted(true);
+    if (!createValid) return;
     createUser(createForm, {
       onSuccess: () => {
         toast.success('Пользователь создан');
         handleCreateClose();
       },
-      onError: () => toast.error('Не удалось создать пользователя'),
+      onError: (err) => toast.error(extractErrorMessage(err, 'Не удалось создать пользователя')),
     });
   };
 
   const handleResetOpen = (user: AdminUser) => {
     setResetUser(user);
     setResetPasswordValue('');
+    setResetSubmitted(false);
   };
 
   const handleResetClose = () => {
@@ -135,8 +158,12 @@ export function UsersPage() {
     setResetPasswordValue('');
   };
 
-  const handleResetConfirm = () => {
-    if (!resetUser) return;
+  const resetValid = resetPasswordValue.length >= 8;
+
+  const handleResetConfirm = (e?: FormEvent) => {
+    e?.preventDefault();
+    setResetSubmitted(true);
+    if (!resetUser || !resetValid) return;
     resetPassword(
       { id: resetUser.id, password: resetPasswordValue },
       {
@@ -144,7 +171,7 @@ export function UsersPage() {
           toast.success('Пароль сброшен');
           handleResetClose();
         },
-        onError: () => toast.error('Не удалось сбросить пароль'),
+        onError: (err) => toast.error(extractErrorMessage(err, 'Не удалось сбросить пароль')),
       },
     );
   };
@@ -289,116 +316,134 @@ export function UsersPage() {
 
       {/* Create user dialog */}
       <Dialog open={createOpen} onClose={handleCreateClose} maxWidth="xs" fullWidth>
-        <DialogTitle>Новый пользователь</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <TextField
-            fullWidth
-            label="Имя"
-            value={createForm.name}
-            onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
-            sx={{ mb: 2, mt: 1 }}
-            inputProps={{ 'data-testid': 'create-name' }}
-          />
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={createForm.email}
-            onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
-            sx={{ mb: 2 }}
-            inputProps={{ 'data-testid': 'create-email' }}
-          />
-          <TextField
-            fullWidth
-            label="Временный пароль"
-            type="password"
-            value={createForm.password}
-            onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
-            sx={{ mb: 2 }}
-            inputProps={{ 'data-testid': 'create-password' }}
-          />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Роль</InputLabel>
-            <Select
-              value={createForm.role}
-              label="Роль"
-              onChange={(e) =>
-                setCreateForm((f) => ({ ...f, role: e.target.value as AdminUser['role'] }))
+        <form onSubmit={handleCreate}>
+          <DialogTitle>Новый пользователь</DialogTitle>
+          <DialogContent sx={{ pt: 2 }}>
+            <TextField
+              fullWidth
+              label="Имя"
+              value={createForm.name}
+              onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
+              sx={{ mb: 2, mt: 1 }}
+              inputProps={{ 'data-testid': 'create-name' }}
+              error={createSubmitted && createForm.name.length < 2}
+              helperText={createSubmitted && createForm.name.length < 2 ? 'Минимум 2 символа' : ''}
+            />
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={createForm.email}
+              onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+              sx={{ mb: 2 }}
+              inputProps={{ 'data-testid': 'create-email' }}
+              error={createSubmitted && !createForm.email.includes('@')}
+              helperText={
+                createSubmitted && !createForm.email.includes('@') ? 'Введите корректный email' : ''
               }
-            >
-              <MenuItem value="CLIENT">Клиент</MenuItem>
-              <MenuItem value="MANAGER">Менеджер</MenuItem>
-              <MenuItem value="ADMIN">Администратор</MenuItem>
-            </Select>
-          </FormControl>
-          {createForm.role === 'CLIENT' && (
+            />
+            <TextField
+              fullWidth
+              label="Временный пароль"
+              type="password"
+              value={createForm.password}
+              onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+              sx={{ mb: 2 }}
+              inputProps={{ 'data-testid': 'create-password' }}
+              error={createSubmitted && createForm.password.length < 8}
+              helperText={
+                createSubmitted && createForm.password.length < 8 ? 'Минимум 8 символов' : ''
+              }
+            />
             <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Менеджер</InputLabel>
+              <InputLabel>Роль</InputLabel>
               <Select
-                value={createForm.managerId ?? ''}
-                label="Менеджер"
+                value={createForm.role}
+                label="Роль"
                 onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, managerId: e.target.value || null }))
+                  setCreateForm((f) => ({ ...f, role: e.target.value as AdminUser['role'] }))
                 }
               >
-                {managers.map((m) => (
-                  <MenuItem key={m.id} value={m.id}>
-                    {m.name}
+                <MenuItem value="CLIENT">Клиент</MenuItem>
+                <MenuItem value="MANAGER">Менеджер</MenuItem>
+                <MenuItem value="ADMIN">Администратор</MenuItem>
+              </Select>
+            </FormControl>
+            {createForm.role === 'CLIENT' && (
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Менеджер</InputLabel>
+                <Select
+                  value={createForm.managerId ?? ''}
+                  label="Менеджер"
+                  onChange={(e) =>
+                    setCreateForm((f) => ({ ...f, managerId: e.target.value || null }))
+                  }
+                >
+                  {managers.map((m) => (
+                    <MenuItem key={m.id} value={m.id}>
+                      {m.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Группа цен</InputLabel>
+              <Select
+                value={createForm.priceGroupId ?? ''}
+                label="Группа цен"
+                onChange={(e) =>
+                  setCreateForm((f) => ({ ...f, priceGroupId: e.target.value || null }))
+                }
+              >
+                <MenuItem value="">— не задана —</MenuItem>
+                {priceGroups.map((pg) => (
+                  <MenuItem key={pg.id} value={pg.id}>
+                    {pg.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-          )}
-
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Группа цен</InputLabel>
-            <Select
-              value={createForm.priceGroupId ?? ''}
-              label="Группа цен"
-              onChange={(e) =>
-                setCreateForm((f) => ({ ...f, priceGroupId: e.target.value || null }))
-              }
-            >
-              <MenuItem value="">— не задана —</MenuItem>
-              {priceGroups.map((pg) => (
-                <MenuItem key={pg.id} value={pg.id}>
-                  {pg.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCreateClose}>Отмена</Button>
-          <Button variant="contained" onClick={handleCreate}>
-            Создать
-          </Button>
-        </DialogActions>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCreateClose}>Отмена</Button>
+            <Button variant="contained" type="submit">
+              Создать
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       {/* Reset password dialog */}
       <Dialog open={!!resetUser} onClose={handleResetClose} maxWidth="xs" fullWidth>
-        <DialogTitle>Сбросить пароль</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Новый временный пароль для пользователя <strong>{resetUser?.name}</strong>. При
-            следующем входе пользователь будет обязан его изменить.
-          </Typography>
-          <TextField
-            fullWidth
-            label="Новый пароль"
-            type="password"
-            value={resetPasswordValue}
-            onChange={(e) => setResetPasswordValue(e.target.value)}
-            inputProps={{ 'data-testid': 'reset-password-input' }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleResetClose}>Отмена</Button>
-          <Button variant="contained" color="warning" onClick={handleResetConfirm}>
-            Сбросить
-          </Button>
-        </DialogActions>
+        <form onSubmit={handleResetConfirm}>
+          <DialogTitle>Сбросить пароль</DialogTitle>
+          <DialogContent sx={{ pt: 2 }}>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Новый временный пароль для пользователя <strong>{resetUser?.name}</strong>. При
+              следующем входе пользователь будет обязан его изменить.
+            </Typography>
+            <TextField
+              fullWidth
+              label="Новый пароль"
+              type="password"
+              value={resetPasswordValue}
+              onChange={(e) => setResetPasswordValue(e.target.value)}
+              inputProps={{ 'data-testid': 'reset-password-input' }}
+              error={resetSubmitted && resetPasswordValue.length < 8}
+              helperText={
+                resetSubmitted && resetPasswordValue.length < 8 ? 'Минимум 8 символов' : ''
+              }
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleResetClose}>Отмена</Button>
+            <Button variant="contained" color="warning" type="submit">
+              Сбросить
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
     </Box>
   );
