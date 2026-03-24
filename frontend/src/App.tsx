@@ -27,8 +27,6 @@ const queryClient = new QueryClient({
   },
 });
 
-export { queryClient };
-
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
   if (isAuthenticated) return <Navigate to="/products" replace />;
