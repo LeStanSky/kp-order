@@ -58,4 +58,15 @@ describe('ProtectedRoute', () => {
     );
     expect(screen.getByText('Client Content')).toBeInTheDocument();
   });
+
+  it('redirects to /change-password when mustChangePassword is true', () => {
+    useAuthStore.getState().setAuth(mockUser, mockTokens, true);
+    renderWithProviders(
+      <ProtectedRoute>
+        <div>Protected Content</div>
+      </ProtectedRoute>,
+      { routerProps: { initialEntries: ['/protected'] } },
+    );
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+  });
 });

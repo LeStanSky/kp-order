@@ -9,10 +9,14 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, mustChangePassword } = useAuthStore();
 
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
