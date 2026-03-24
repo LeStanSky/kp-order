@@ -1,10 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ordersApi, type GetOrdersParams } from '@/api/orders.api';
+import { ordersApi, type GetOrdersParams, type CreateOrderParams } from '@/api/orders.api';
 
 export function useOrders(params?: GetOrdersParams) {
   return useQuery({
     queryKey: ['orders', params],
     queryFn: () => ordersApi.getOrders(params),
+  });
+}
+
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: CreateOrderParams) => ordersApi.createOrder(params),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
   });
 }
 
