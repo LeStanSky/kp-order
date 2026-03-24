@@ -59,7 +59,7 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(authApi.login).toHaveBeenCalledWith('test@test.com', 'password123');
-      expect(mockNavigate).toHaveBeenCalledWith('/products');
+      expect(mockNavigate).toHaveBeenCalledWith('/products', { replace: true });
     });
   });
 
@@ -98,7 +98,7 @@ describe('LoginPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /войти|sign in|login/i }));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/change-password');
+      expect(mockNavigate).toHaveBeenCalledWith('/change-password', { replace: true });
     });
   });
 });

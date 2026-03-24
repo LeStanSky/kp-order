@@ -11,7 +11,9 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
-  setAuth: (user: User, tokens: Tokens) => void;
+  mustChangePassword: boolean;
+  setAuth: (user: User, tokens: Tokens, mustChangePassword?: boolean) => void;
+  clearMustChangePassword: () => void;
   clearAuth: () => void;
   isAuthenticated: () => boolean;
   hasRole: (role: UserRole) => boolean;
@@ -23,13 +25,17 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
-      setAuth: (user, tokens) =>
+      mustChangePassword: false,
+      setAuth: (user, tokens, mustChangePassword = false) =>
         set({
           user,
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
+          mustChangePassword,
         }),
-      clearAuth: () => set({ user: null, accessToken: null, refreshToken: null }),
+      clearMustChangePassword: () => set({ mustChangePassword: false }),
+      clearAuth: () =>
+        set({ user: null, accessToken: null, refreshToken: null, mustChangePassword: false }),
       isAuthenticated: () => get().accessToken !== null,
       hasRole: (role) => get().user?.role === role,
     }),

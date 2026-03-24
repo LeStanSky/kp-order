@@ -40,14 +40,15 @@ export function LoginPage() {
     setLoading(true);
     try {
       const response = await authApi.login(data.email, data.password);
-      setAuth(response.user, {
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-      });
+      setAuth(
+        response.user,
+        { accessToken: response.accessToken, refreshToken: response.refreshToken },
+        response.mustChangePassword,
+      );
       if (response.mustChangePassword) {
-        navigate('/change-password');
+        navigate('/change-password', { replace: true });
       } else {
-        navigate('/products');
+        navigate('/products', { replace: true });
       }
     } catch {
       toast.error('Неверный email или пароль');
