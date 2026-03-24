@@ -17,7 +17,7 @@ const PRICE_GROUPS = [
   'Прайс Градусы',
   'Прайс Пив.com',
   'Прайс beer.exe',
-  'Прайс спец мьельнир',
+  'Прайс ХС',
 ];
 
 const SYNC_GROUPS = [

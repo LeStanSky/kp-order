@@ -54,13 +54,13 @@ describe('Header', () => {
     expect(screen.queryByTestId('cart-icon-btn')).not.toBeInTheDocument();
   });
 
-  it('shows Пользователи link for ADMIN', () => {
+  it('shows Пользователи nav for ADMIN', () => {
     useAuthStore.getState().setAuth(adminUser, tokens);
     renderWithProviders(<Header />);
     expect(screen.getByRole('button', { name: /пользователи/i })).toBeInTheDocument();
   });
 
-  it('does not show Пользователи link for CLIENT', () => {
+  it('does not show Пользователи nav for CLIENT', () => {
     useAuthStore.getState().setAuth(clientUser, tokens);
     renderWithProviders(<Header />);
     expect(screen.queryByRole('button', { name: /пользователи/i })).not.toBeInTheDocument();

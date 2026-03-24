@@ -8,6 +8,9 @@ import {
   Button,
   Box,
   Divider,
+  Tooltip,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import ListAltIcon from '@mui/icons-material/ListAlt';
@@ -20,6 +23,14 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { useThemeStore } from '@/store/themeStore';
+import type { ReactElement } from 'react';
+
+interface NavItem {
+  label: string;
+  icon: ReactElement;
+  path: string;
+  active: boolean;
+}
 
 export function Header() {
   const navigate = useNavigate();
@@ -27,6 +38,8 @@ export function Header() {
   const { user, clearAuth, hasRole } = useAuthStore();
   const totalItems = useCartStore((s) => s.totalItems());
   const { mode, toggleMode } = useThemeStore();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleLogout = () => {
     clearAuth();
@@ -40,80 +53,78 @@ export function Header() {
   const onAlerts = location.pathname === '/stock-alerts';
   const onUsers = location.pathname === '/users';
 
+  const navItems: NavItem[] = [
+    { label: 'Товары', icon: <InventoryIcon />, path: '/products', active: onProducts },
+    { label: 'Заказы', icon: <ListAltIcon />, path: '/orders', active: onOrders },
+    ...(isAdmin
+      ? [{ label: 'Пользователи', icon: <PeopleIcon />, path: '/users', active: onUsers }]
+      : []),
+    ...(!isClient
+      ? [
+          {
+            label: 'Оповещения',
+            icon: <NotificationsIcon />,
+            path: '/stock-alerts',
+            active: onAlerts,
+          },
+        ]
+      : []),
+  ];
+
+  const activeSx = (active: boolean) => ({
+    borderBottom: active ? '2px solid white' : '2px solid transparent',
+    borderRadius: 0,
+    pb: 0.5,
+  });
+
   return (
     <AppBar position="static">
-      <Toolbar sx={{ gap: 0.5 }}>
-        <Typography variant="h6" component="div" sx={{ mr: 2, fontWeight: 700, letterSpacing: 1 }}>
+      <Toolbar sx={{ gap: 0.5, minHeight: { xs: 48 }, px: { xs: 1, md: 2 } }}>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            mr: { xs: 1, md: 2 },
+            flexGrow: { xs: 1, md: 0 },
+            fontWeight: 700,
+            letterSpacing: 1,
+          }}
+        >
           KPOrder
         </Typography>
 
         <Divider
           orientation="vertical"
           flexItem
-          sx={{ borderColor: 'rgba(255,255,255,0.3)', mx: 1 }}
+          sx={{ borderColor: 'rgba(255,255,255,0.3)', mx: 1, display: { xs: 'none', md: 'flex' } }}
         />
 
-        <Button
-          color="inherit"
-          startIcon={<InventoryIcon />}
-          onClick={() => navigate('/products')}
-          sx={{
-            fontWeight: onProducts ? 700 : 400,
-            borderBottom: onProducts ? '2px solid white' : '2px solid transparent',
-            borderRadius: 0,
-            pb: 0.5,
-          }}
-        >
-          Товары
-        </Button>
-
-        <Button
-          color="inherit"
-          startIcon={<ListAltIcon />}
-          onClick={() => navigate('/orders')}
-          sx={{
-            fontWeight: onOrders ? 700 : 400,
-            borderBottom: onOrders ? '2px solid white' : '2px solid transparent',
-            borderRadius: 0,
-            pb: 0.5,
-          }}
-        >
-          Заказы
-        </Button>
-
-        {isAdmin && (
-          <Button
-            color="inherit"
-            startIcon={<PeopleIcon />}
-            onClick={() => navigate('/users')}
-            sx={{
-              fontWeight: onUsers ? 700 : 400,
-              borderBottom: onUsers ? '2px solid white' : '2px solid transparent',
-              borderRadius: 0,
-              pb: 0.5,
-            }}
-          >
-            Пользователи
-          </Button>
+        {navItems.map((item) =>
+          isMobile ? (
+            <Tooltip key={item.path} title={item.label}>
+              <IconButton
+                color="inherit"
+                onClick={() => navigate(item.path)}
+                aria-label={item.label}
+                sx={activeSx(item.active)}
+              >
+                {item.icon}
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Button
+              key={item.path}
+              color="inherit"
+              startIcon={item.icon}
+              onClick={() => navigate(item.path)}
+              sx={{ fontWeight: item.active ? 700 : 400, ...activeSx(item.active) }}
+            >
+              {item.label}
+            </Button>
+          ),
         )}
 
-        {!isClient && (
-          <Button
-            color="inherit"
-            startIcon={<NotificationsIcon />}
-            onClick={() => navigate('/stock-alerts')}
-            sx={{
-              fontWeight: onAlerts ? 700 : 400,
-              borderBottom: onAlerts ? '2px solid white' : '2px solid transparent',
-              borderRadius: 0,
-              pb: 0.5,
-            }}
-          >
-            Оповещения
-          </Button>
-        )}
-
-        <Box sx={{ flexGrow: 1 }} />
+        <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'block' } }} />
 
         {isClient && (
           <IconButton
@@ -128,7 +139,7 @@ export function Header() {
           </IconButton>
         )}
 
-        <Typography variant="body2" sx={{ mx: 1 }}>
+        <Typography variant="body2" sx={{ mx: 1, display: { xs: 'none', md: 'block' } }}>
           {user?.name}
         </Typography>
 
@@ -140,15 +151,23 @@ export function Header() {
           {mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
         </IconButton>
 
-        <Button
-          color="inherit"
-          onClick={handleLogout}
-          aria-label="Выйти"
-          startIcon={<LogoutIcon />}
-          size="small"
-        >
-          Выйти
-        </Button>
+        {isMobile ? (
+          <Tooltip title="Выйти">
+            <IconButton color="inherit" onClick={handleLogout} aria-label="Выйти">
+              <LogoutIcon />
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Button
+            color="inherit"
+            onClick={handleLogout}
+            aria-label="Выйти"
+            startIcon={<LogoutIcon />}
+            size="small"
+          >
+            Выйти
+          </Button>
+        )}
       </Toolbar>
     </AppBar>
   );

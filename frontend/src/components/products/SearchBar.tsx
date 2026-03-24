@@ -36,7 +36,7 @@ export function SearchBar({ onSearch, placeholder = 'Поиск товаров..
           ),
         },
       }}
-      sx={{ minWidth: 280 }}
+      sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 280 } }}
     />
   );
 }

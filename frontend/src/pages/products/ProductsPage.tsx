@@ -89,7 +89,12 @@ export function ProductsPage() {
 
   return (
     <Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }} alignItems="center">
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={2}
+        sx={{ mb: 3, width: '100%' }}
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+      >
         <SearchBar onSearch={handleSearch} />
         {categories && (
           <CategoryFilter categories={categories} selected={category} onChange={handleCategory} />
