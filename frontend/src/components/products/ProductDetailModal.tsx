@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -41,11 +41,12 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
   const { addItem } = useCartStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [qty, setQty] = useState(0);
+  const [prevProductId, setPrevProductId] = useState<string | null>(null);
+  if (product && product.id !== prevProductId) {
+    setPrevProductId(product.id);
+    setQty(0);
+  }
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (product) setQty(0);
-  }, [product]);
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => productsApi.uploadImage(product?.id ?? '', file),
