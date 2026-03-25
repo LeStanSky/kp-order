@@ -29,7 +29,7 @@ interface ProductRowProps {
 export function ProductRow({ product, onOpen }: ProductRowProps) {
   const { hasRole } = useAuthStore();
   const { items, addItem, updateQuantity } = useCartStore();
-  const [inputQty, setInputQty] = useState(1);
+  const [inputQty, setInputQty] = useState(0);
 
   const isClient = hasRole('CLIENT');
   const cartItem = items.find((i) => i.productId === product.id);
@@ -109,9 +109,9 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
               type="number"
               size="small"
               value={inputQty}
-              onChange={(e) => setInputQty(Math.max(1, Number(e.target.value)))}
+              onChange={(e) => setInputQty(Math.max(0, Number(e.target.value)))}
               disabled={outOfStock}
-              slotProps={{ htmlInput: { min: 1, style: { textAlign: 'center', width: 60 } } }}
+              slotProps={{ htmlInput: { min: 0, style: { textAlign: 'center', width: 60 } } }}
               variant="outlined"
             />
           </TableCell>
@@ -119,7 +119,12 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
           <TableCell align="center" sx={{ width: 56 }}>
             <Tooltip title={outOfStock ? 'Нет в наличии' : 'Добавить в корзину'}>
               <span>
-                <IconButton color="primary" onClick={handleAdd} disabled={outOfStock} size="small">
+                <IconButton
+                  color="primary"
+                  onClick={handleAdd}
+                  disabled={outOfStock || inputQty < 1}
+                  size="small"
+                >
                   <AddShoppingCartIcon fontSize="small" />
                 </IconButton>
               </span>
