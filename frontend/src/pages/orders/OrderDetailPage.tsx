@@ -36,6 +36,7 @@ export function OrderDetailPage() {
   const { mutate: repeatOrder, isPending: repeating } = useRepeatOrder();
   const { mutate: deleteOrder, isPending: deleting } = useDeleteOrder();
   const isAdmin = useAuthStore((s) => s.hasRole('ADMIN'));
+  const isManager = useAuthStore((s) => s.hasRole('MANAGER'));
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -146,9 +147,11 @@ export function OrderDetailPage() {
       </TableContainer>
 
       <Stack direction="row" spacing={2}>
-        <Button variant="contained" onClick={handleRepeatClick} disabled={repeating}>
-          {repeating ? <CircularProgress size={20} /> : 'Повторить заказ'}
-        </Button>
+        {!isManager && (
+          <Button variant="contained" onClick={handleRepeatClick} disabled={repeating}>
+            {repeating ? <CircularProgress size={20} /> : 'Повторить заказ'}
+          </Button>
+        )}
         {isAdmin && (
           <Button variant="outlined" color="error" onClick={handleDeleteClick} disabled={deleting}>
             {deleting ? <CircularProgress size={20} /> : 'Удалить заказ'}
