@@ -42,6 +42,10 @@ export const emailService = {
       return;
     }
     try {
+      logger.info('Sending manager notification', {
+        to: data.managerEmail,
+        orderNumber: data.orderNumber,
+      });
       await transporter.sendMail({
         from: env.SMTP_FROM,
         to: data.managerEmail,
@@ -70,6 +74,10 @@ export const emailService = {
       return;
     }
     try {
+      logger.info('Sending client confirmation', {
+        to: data.customerEmail,
+        orderNumber: data.orderNumber,
+      });
       await transporter.sendMail({
         from: env.SMTP_FROM,
         to: data.customerEmail,
