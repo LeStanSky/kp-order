@@ -40,7 +40,12 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
   const { hasRole } = useAuthStore();
   const { addItem } = useCartStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(0);
+  const [prevProductId, setPrevProductId] = useState<string | null>(null);
+  if (product && product.id !== prevProductId) {
+    setPrevProductId(product.id);
+    setQty(0);
+  }
   const queryClient = useQueryClient();
 
   const uploadMutation = useMutation({
@@ -219,11 +224,11 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
                   type="number"
                   size="small"
                   value={qty}
-                  onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
-                  slotProps={{ htmlInput: { min: 1, style: { textAlign: 'center', width: 56 } } }}
+                  onChange={(e) => setQty(Math.max(0, Number(e.target.value)))}
+                  slotProps={{ htmlInput: { min: 0, style: { textAlign: 'center', width: 56 } } }}
                   variant="outlined"
                 />
-                <Button variant="contained" onClick={handleAddToCart}>
+                <Button variant="contained" onClick={handleAddToCart} disabled={qty < 1}>
                   В корзину
                 </Button>
               </Stack>

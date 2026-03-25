@@ -49,6 +49,7 @@ const mockOrder = {
 };
 
 const adminUser: User = { id: '2', email: 'a@a.com', name: 'Admin', role: 'ADMIN' };
+const managerUser: User = { id: '3', email: 'm@m.com', name: 'Manager', role: 'MANAGER' };
 
 beforeEach(async () => {
   useAuthStore.getState().clearAuth();
@@ -127,6 +128,16 @@ describe('OrderDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /повторить|repeat/i }));
     fireEvent.click(screen.getByRole('button', { name: /подтвердить/i }));
     expect(mockMutate).toHaveBeenCalledWith('order-1', expect.any(Object));
+  });
+
+  it('does not show repeat button for MANAGER', async () => {
+    useAuthStore.getState().clearAuth();
+    useAuthStore.getState().setAuth(managerUser, tokens);
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByText('ORD-001')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: /повторить|repeat/i })).not.toBeInTheDocument();
   });
 
   it('does not show delete button for CLIENT', async () => {
