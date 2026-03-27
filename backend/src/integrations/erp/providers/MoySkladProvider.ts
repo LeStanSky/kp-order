@@ -103,7 +103,8 @@ export class MoySkladProvider implements IERPProvider {
   }
 
   async getStock(): Promise<ERPStock[]> {
-    const stocks: ERPStock[] = [];
+    // 1. Fetch product-level stock to build code → productExternalId mapping
+    const codeToProductId = new Map<string, string>();
     let offset = 0;
     let hasMore = true;
 
@@ -115,9 +116,33 @@ export class MoySkladProvider implements IERPProvider {
 
       for (const row of rows) {
         if (!row.meta?.href?.includes('/product/')) continue;
-
         const productId = row.meta.href.split('/product/').pop()?.split('?')[0];
+        if (productId && row.code) {
+          codeToProductId.set(row.code, productId);
+        }
+      }
+
+      hasMore = rows.length === LIMIT;
+      offset += LIMIT;
+    }
+
+    // 2. Fetch consignment-level stock (has expiry dates in names)
+    const stocks: ERPStock[] = [];
+    const seenProducts = new Set<string>();
+    offset = 0;
+    hasMore = true;
+
+    while (hasMore) {
+      const url = `${this.baseUrl}/report/stock/all?limit=${LIMIT}&offset=${offset}&groupBy=consignment`;
+      const response = await fetchWithRetry(url, { headers: getHeaders() });
+      const data = (await response.json()) as any;
+      const rows = data.rows || [];
+
+      for (const row of rows) {
+        const productId = codeToProductId.get(row.code);
         if (!productId) continue;
+
+        seenProducts.add(productId);
 
         stocks.push({
           productExternalId: productId,
@@ -131,7 +156,36 @@ export class MoySkladProvider implements IERPProvider {
       offset += LIMIT;
     }
 
-    logger.info(`MoySklad: fetched ${stocks.length} stock entries`);
+    // 3. Products without consignments — use product-level data (no expiry)
+    offset = 0;
+    hasMore = true;
+
+    while (hasMore) {
+      const url = `${this.baseUrl}/report/stock/all?limit=${LIMIT}&offset=${offset}`;
+      const response = await fetchWithRetry(url, { headers: getHeaders() });
+      const data = (await response.json()) as any;
+      const rows = data.rows || [];
+
+      for (const row of rows) {
+        if (!row.meta?.href?.includes('/product/')) continue;
+        const productId = row.meta.href.split('/product/').pop()?.split('?')[0];
+        if (!productId || seenProducts.has(productId)) continue;
+
+        stocks.push({
+          productExternalId: productId,
+          productName: row.name || '',
+          quantity: row.quantity || 0,
+          warehouse: row.store?.name,
+        });
+      }
+
+      hasMore = rows.length === LIMIT;
+      offset += LIMIT;
+    }
+
+    logger.info(
+      `MoySklad: fetched ${stocks.length} stock entries (${seenProducts.size} with consignments)`,
+    );
     return stocks;
   }
 
