@@ -24,6 +24,26 @@ describe('ProductRepository', () => {
         }),
       );
     });
+
+    it('should exclude expired products', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll({
+        page: 1,
+        limit: 20,
+        sortBy: 'cleanName',
+        sortOrder: 'asc',
+      });
+
+      expect(db.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [{ expiryDate: null }, { expiryDate: { gte: expect.any(Date) } }],
+          }),
+        }),
+      );
+    });
   });
 
   describe('updateById', () => {

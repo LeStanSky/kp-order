@@ -7,6 +7,10 @@ export const getProductsQuerySchema = z.object({
   category: z.string().optional(),
   sortBy: z.enum(['name', 'cleanName', 'category', 'expiryDate', 'createdAt']).default('cleanName'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
+  expired: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
 });
 
 export type GetProductsQuery = z.infer<typeof getProductsQuerySchema>;

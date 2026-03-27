@@ -1,12 +1,20 @@
 import { Box, Chip } from '@mui/material';
 
+export const EXPIRED_CATEGORY = '__expired__';
+
 interface CategoryFilterProps {
   categories: string[];
   selected: string | null;
   onChange: (category: string | null) => void;
+  showExpired?: boolean;
 }
 
-export function CategoryFilter({ categories, selected, onChange }: CategoryFilterProps) {
+export function CategoryFilter({
+  categories,
+  selected,
+  onChange,
+  showExpired,
+}: CategoryFilterProps) {
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
       <Chip
@@ -24,6 +32,14 @@ export function CategoryFilter({ categories, selected, onChange }: CategoryFilte
           variant={selected === cat ? 'filled' : 'outlined'}
         />
       ))}
+      {showExpired && (
+        <Chip
+          label="Просрочка"
+          onClick={() => onChange(EXPIRED_CATEGORY)}
+          color={selected === EXPIRED_CATEGORY ? 'error' : 'default'}
+          variant={selected === EXPIRED_CATEGORY ? 'filled' : 'outlined'}
+        />
+      )}
     </Box>
   );
 }

@@ -37,6 +37,7 @@ export interface GetProductsOptions {
   category?: string;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
+  expired?: boolean;
 }
 
 export interface IERPProvider {

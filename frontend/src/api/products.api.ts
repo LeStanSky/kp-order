@@ -8,6 +8,7 @@ export interface GetProductsParams {
   category?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  expired?: boolean;
 }
 
 export const productsApi = {

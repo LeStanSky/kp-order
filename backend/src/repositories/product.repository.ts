@@ -4,12 +4,20 @@ import { GetProductsOptions } from '../types/erp.types';
 
 export const productRepository = {
   async findAll(options: GetProductsOptions, priceGroupId?: string | null) {
-    const { page, limit, search, category, sortBy, sortOrder } = options;
+    const { page, limit, search, category, sortBy, sortOrder, expired } = options;
     const skip = (page - 1) * limit;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expiryFilter = expired
+      ? { expiryDate: { lt: today } }
+      : { OR: [{ expiryDate: null }, { expiryDate: { gte: today } }] };
 
     const where: Prisma.ProductWhereInput = {
       isActive: true,
       stocks: { some: { quantity: { gt: 0 } } },
+      ...expiryFilter,
       ...(search && {
         cleanName: { contains: search, mode: 'insensitive' as const },
       }),
