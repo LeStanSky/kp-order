@@ -38,21 +38,25 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
   const displayStock = resolveStock(product.name, product.stock, product.unit);
   const displayPrice = resolvePrice(product.prices, product.name, product.unit);
   const outOfStock = displayStock.value === 0;
+  const availableQty = Math.max(0, displayStock.value - (cartItem?.quantity ?? 0));
 
   const handleAdd = () => {
     if (inputQty < 1) return;
+    const clampedQty = Math.min(inputQty, availableQty);
+    if (clampedQty < 1) return;
     if (cartItem) {
-      updateQuantity(product.id, cartItem.quantity + inputQty);
+      updateQuantity(product.id, cartItem.quantity + clampedQty);
     } else {
       addItem({
         productId: product.id,
         name: displayName,
         price: displayPrice?.value ?? 0,
         currency: displayPrice?.currency ?? 'RUB',
-        quantity: inputQty,
+        quantity: clampedQty,
         isKeg: isKeg(product.name, product.unit),
       });
     }
+    setInputQty(0);
   };
 
   return (
@@ -109,9 +113,13 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
               type="number"
               size="small"
               value={inputQty}
-              onChange={(e) => setInputQty(Math.max(0, Number(e.target.value)))}
-              disabled={outOfStock}
-              slotProps={{ htmlInput: { min: 0, style: { textAlign: 'center', width: 60 } } }}
+              onChange={(e) =>
+                setInputQty(Math.min(Math.max(0, Number(e.target.value)), availableQty))
+              }
+              disabled={outOfStock || availableQty === 0}
+              slotProps={{
+                htmlInput: { min: 0, max: availableQty, style: { textAlign: 'center', width: 60 } },
+              }}
               variant="outlined"
             />
           </TableCell>
@@ -122,7 +130,7 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
                 <IconButton
                   color="primary"
                   onClick={handleAdd}
-                  disabled={outOfStock || inputQty < 1}
+                  disabled={outOfStock || inputQty < 1 || availableQty === 0}
                   size="small"
                 >
                   <AddShoppingCartIcon fontSize="small" />

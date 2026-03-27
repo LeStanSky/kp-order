@@ -38,7 +38,7 @@ interface ProductDetailModalProps {
 
 export function ProductDetailModal({ product, onClose }: ProductDetailModalProps) {
   const { hasRole } = useAuthStore();
-  const { addItem } = useCartStore();
+  const { items: cartItems, addItem } = useCartStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [qty, setQty] = useState(0);
   const [prevProductId, setPrevProductId] = useState<string | null>(null);
@@ -75,14 +75,18 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
   const displayStock = resolveStock(product.name, product.stock, product.unit);
   const displayPrice = resolvePrice(product.prices, product.name, product.unit);
   const outOfStock = displayStock.value === 0;
+  const cartItem = cartItems.find((i) => i.productId === product.id);
+  const availableQty = Math.max(0, displayStock.value - (cartItem?.quantity ?? 0));
 
   const handleAddToCart = () => {
+    const clampedQty = Math.min(qty, availableQty);
+    if (clampedQty < 1) return;
     addItem({
       productId: product.id,
       name: displayName,
       price: displayPrice?.value ?? 0,
       currency: displayPrice?.currency ?? 'RUB',
-      quantity: qty,
+      quantity: clampedQty,
     });
     toast.success('Добавлено в корзину');
     onClose();
@@ -224,11 +228,24 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
                   type="number"
                   size="small"
                   value={qty}
-                  onChange={(e) => setQty(Math.max(0, Number(e.target.value)))}
-                  slotProps={{ htmlInput: { min: 0, style: { textAlign: 'center', width: 56 } } }}
+                  onChange={(e) =>
+                    setQty(Math.min(Math.max(0, Number(e.target.value)), availableQty))
+                  }
+                  disabled={availableQty === 0}
+                  slotProps={{
+                    htmlInput: {
+                      min: 0,
+                      max: availableQty,
+                      style: { textAlign: 'center', width: 56 },
+                    },
+                  }}
                   variant="outlined"
                 />
-                <Button variant="contained" onClick={handleAddToCart} disabled={qty < 1}>
+                <Button
+                  variant="contained"
+                  onClick={handleAddToCart}
+                  disabled={qty < 1 || availableQty === 0}
+                >
                   В корзину
                 </Button>
               </Stack>
