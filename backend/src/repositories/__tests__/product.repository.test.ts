@@ -24,6 +24,159 @@ describe('ProductRepository', () => {
         }),
       );
     });
+
+    it('should exclude expired products', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll({
+        page: 1,
+        limit: 20,
+        sortBy: 'cleanName',
+        sortOrder: 'asc',
+      });
+
+      expect(db.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [{ expiryDate: null }, { expiryDate: { gte: expect.any(Date) } }],
+          }),
+        }),
+      );
+    });
+
+    it('should show only expired products when expired=true', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll({
+        page: 1,
+        limit: 20,
+        sortBy: 'cleanName',
+        sortOrder: 'asc',
+        expired: true,
+      });
+
+      expect(db.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            expiryDate: { lt: expect.any(Date) },
+          }),
+        }),
+      );
+      // Should NOT have OR filter
+      const where = (db.product.findMany as jest.Mock).mock.calls[0][0].where;
+      expect(where.OR).toBeUndefined();
+    });
+
+    it('should filter by search term', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll({
+        page: 1,
+        limit: 20,
+        search: 'Jaws',
+        sortBy: 'cleanName',
+        sortOrder: 'asc',
+      });
+
+      expect(db.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            cleanName: { contains: 'Jaws', mode: 'insensitive' },
+          }),
+        }),
+      );
+    });
+
+    it('should filter by category', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll({
+        page: 1,
+        limit: 20,
+        category: 'Jaws',
+        sortBy: 'cleanName',
+        sortOrder: 'asc',
+      });
+
+      expect(db.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            category: 'Jaws',
+          }),
+        }),
+      );
+    });
+
+    it('should use priceGroupId for price filtering', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll(
+        { page: 1, limit: 20, sortBy: 'cleanName', sortOrder: 'asc' },
+        'pg-1',
+      );
+
+      expect(db.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            prices: expect.objectContaining({
+              where: { priceGroupId: 'pg-1' },
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should calculate pagination correctly', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(50);
+
+      const result = await productRepository.findAll({
+        page: 3,
+        limit: 10,
+        sortBy: 'cleanName',
+        sortOrder: 'asc',
+      });
+
+      expect(db.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 20, take: 10 }),
+      );
+      expect(result).toEqual({
+        products: [],
+        total: 50,
+        page: 3,
+        limit: 10,
+        totalPages: 5,
+      });
+    });
+  });
+
+  describe('getCategories', () => {
+    it('should return categories with stock and non-expired', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { category: 'Jaws' },
+        { category: 'Ostrovica' },
+      ]);
+
+      const result = await productRepository.getCategories();
+
+      expect(db.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isActive: true,
+            category: { not: null },
+            stocks: { some: { quantity: { gt: 0 } } },
+            OR: [{ expiryDate: null }, { expiryDate: { gte: expect.any(Date) } }],
+          }),
+          distinct: ['category'],
+        }),
+      );
+      expect(result).toEqual(['Jaws', 'Ostrovica']);
+    });
   });
 
   describe('updateById', () => {

@@ -30,24 +30,31 @@ async function syncProducts(_job: Job): Promise<ERPSyncResult> {
   // 3. Upsert products and prices
   for (const erpProduct of erpProducts) {
     try {
+      const { cleanName: parsedName, expiryDate: parsedExpiry } = parseProductExpiry(
+        erpProduct.name,
+      );
+      const productCleanName = parsedName.replace(/\s{2,}/g, ' ').trim();
+
       const product = await prisma.product.upsert({
         where: { externalId: erpProduct.id },
         create: {
           externalId: erpProduct.id,
           name: erpProduct.name,
-          cleanName: erpProduct.name,
+          cleanName: productCleanName,
           description: erpProduct.description,
           category: erpProduct.category,
           unit: erpProduct.unit,
           imageUrl: erpProduct.imageUrl,
+          expiryDate: parsedExpiry,
         },
         update: {
           name: erpProduct.name,
-          cleanName: erpProduct.name,
+          cleanName: productCleanName,
           description: erpProduct.description,
           category: erpProduct.category,
           unit: erpProduct.unit,
           imageUrl: erpProduct.imageUrl,
+          expiryDate: parsedExpiry,
         },
       });
       productsUpserted++;
@@ -81,27 +88,66 @@ async function syncProducts(_job: Job): Promise<ERPSyncResult> {
     }
   }
 
-  // 4. Fetch and upsert stock (contains expiry dates in names)
+  // 4. Fetch stock (consignment-level with expiry dates in names)
   logger.info('Sync: fetching stock from ERP...');
   const erpStocks = await provider.getStock();
 
+  // Group stock entries by product (multiple consignments per product)
+  const stockByProduct = new Map<string, typeof erpStocks>();
   for (const stock of erpStocks) {
+    const existing = stockByProduct.get(stock.productExternalId) || [];
+    existing.push(stock);
+    stockByProduct.set(stock.productExternalId, existing);
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (const [productExtId, entries] of stockByProduct) {
     try {
       const product = await prisma.product.findUnique({
-        where: { externalId: stock.productExternalId },
+        where: { externalId: productExtId },
       });
       if (!product) continue;
 
-      // Parse expiry from stock product name (PET KEG kept for volume detection on frontend)
-      const { cleanName: parsedCleanName, expiryDate } = parseProductExpiry(stock.productName);
-      const cleanName = parsedCleanName.replace(/\s{2,}/g, ' ').trim();
+      // Parse dates, separate expired vs non-expired stock
+      let activeQty = 0;
+      let expiredQty = 0;
+      let earliestActiveExpiry: Date | null = null;
+      let latestExpiredDate: Date | null = null;
+      let cleanName: string | null = null;
 
-      // Update product with parsed expiry and clean name from stock report
+      for (const entry of entries) {
+        const { cleanName: cn, expiryDate } = parseProductExpiry(entry.productName);
+        if (!cleanName) cleanName = cn;
+
+        if (expiryDate && expiryDate < today) {
+          // Expired consignment
+          expiredQty += entry.quantity;
+          if (!latestExpiredDate || expiryDate > latestExpiredDate) {
+            latestExpiredDate = expiryDate;
+          }
+        } else {
+          // Active consignment
+          activeQty += entry.quantity;
+          if (expiryDate && (!earliestActiveExpiry || expiryDate < earliestActiveExpiry)) {
+            earliestActiveExpiry = expiryDate;
+          }
+        }
+      }
+
+      // If has active stock: show in normal view (expiryDate = earliest active)
+      // If all expired: show in "Просрочка" (expiryDate = latest expired, stock = expired qty)
+      const totalQty = activeQty > 0 ? activeQty : expiredQty;
+      const earliestExpiry = activeQty > 0 ? earliestActiveExpiry : latestExpiredDate;
+
+      const parsedCleanName = (cleanName || entries[0].productName).replace(/\s{2,}/g, ' ').trim();
+
       await prisma.product.update({
         where: { id: product.id },
         data: {
-          cleanName,
-          ...(expiryDate && { expiryDate }),
+          cleanName: parsedCleanName,
+          expiryDate: earliestExpiry,
         },
       });
 
@@ -109,27 +155,53 @@ async function syncProducts(_job: Job): Promise<ERPSyncResult> {
         where: {
           productId_warehouse: {
             productId: product.id,
-            warehouse: stock.warehouse ?? '',
+            warehouse: '',
           },
         },
         create: {
           productId: product.id,
-          quantity: stock.quantity,
-          warehouse: stock.warehouse ?? '',
+          quantity: totalQty,
+          warehouse: '',
         },
         update: {
-          quantity: stock.quantity,
+          quantity: totalQty,
         },
       });
       stocksUpserted++;
     } catch (err) {
-      const msg = `Failed to upsert stock for ${stock.productExternalId}: ${(err as Error).message}`;
+      const msg = `Failed to upsert stock for ${productExtId}: ${(err as Error).message}`;
       errors.push(msg);
       logger.error(msg);
     }
   }
 
-  // 5. Invalidate cache
+  // 5. Zero out stock for products not in ERP stock report
+  const syncedProductIds = new Set<string>();
+  for (const productExtId of stockByProduct.keys()) {
+    const product = await prisma.product.findUnique({
+      where: { externalId: productExtId },
+      select: { id: true },
+    });
+    if (product) syncedProductIds.add(product.id);
+  }
+
+  const staleStocks = await prisma.stock.findMany({
+    where: {
+      quantity: { gt: 0 },
+      productId: { notIn: [...syncedProductIds] },
+    },
+    select: { id: true },
+  });
+
+  if (staleStocks.length > 0) {
+    await prisma.stock.updateMany({
+      where: { id: { in: staleStocks.map((s: { id: string }) => s.id) } },
+      data: { quantity: 0 },
+    });
+    logger.info(`Sync: zeroed ${staleStocks.length} stale stock entries`);
+  }
+
+  // 6. Invalidate cache
   await cacheService.delByPattern('products:*');
   await cacheService.delByPattern('categories');
 

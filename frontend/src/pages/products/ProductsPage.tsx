@@ -20,7 +20,7 @@ import { useProducts, useCategories } from '@/hooks/useProducts';
 import { resolveStock } from '@/utils/productDisplay';
 import { ProductRow } from '@/components/products/ProductRow';
 import { ProductDetailModal } from '@/components/products/ProductDetailModal';
-import { CategoryFilter } from '@/components/products/CategoryFilter';
+import { CategoryFilter, EXPIRED_CATEGORY } from '@/components/products/CategoryFilter';
 import { SearchBar } from '@/components/products/SearchBar';
 import { useAuthStore } from '@/store/authStore';
 import type { Product } from '@/types/product.types';
@@ -55,6 +55,7 @@ export function ProductsPage() {
     });
   };
   const isClient = hasRole('CLIENT');
+  const isExpiredView = category === EXPIRED_CATEGORY;
 
   const {
     data: productsData,
@@ -64,7 +65,8 @@ export function ProductsPage() {
     page,
     limit: PAGE_SIZE,
     search: search || undefined,
-    category: category ?? undefined,
+    category: isExpiredView ? undefined : (category ?? undefined),
+    expired: isExpiredView || undefined,
   });
 
   const { data: categories } = useCategories();
@@ -97,7 +99,12 @@ export function ProductsPage() {
       >
         <SearchBar onSearch={handleSearch} />
         {categories && (
-          <CategoryFilter categories={categories} selected={category} onChange={handleCategory} />
+          <CategoryFilter
+            categories={categories}
+            selected={category}
+            onChange={handleCategory}
+            showExpired={!isClient}
+          />
         )}
       </Stack>
 
