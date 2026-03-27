@@ -6,6 +6,7 @@ export const createUserSchema = z
     email: z.string().email(),
     password: z.string().min(8),
     role: z.enum(['CLIENT', 'MANAGER', 'ADMIN']).default('CLIENT'),
+    deliveryCategory: z.enum(['STANDARD', 'REMOTE']).optional(),
     managerId: z.string().uuid().nullable().optional(),
     priceGroupId: z.string().uuid().nullable().optional(),
   })
@@ -19,6 +20,7 @@ export const updateUserSchema = z
     email: z.string().email().optional(),
     role: z.enum(['CLIENT', 'MANAGER', 'ADMIN']).optional(),
     isActive: z.boolean().optional(),
+    deliveryCategory: z.enum(['STANDARD', 'REMOTE']).optional(),
     managerId: z.string().uuid().nullable().optional(),
     priceGroupId: z.string().uuid().nullable().optional(),
   })

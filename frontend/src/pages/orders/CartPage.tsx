@@ -23,6 +23,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import toast from 'react-hot-toast';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 import { useCreateOrder } from '@/hooks/useOrders';
 import { formatPrice } from '@/utils/productDisplay';
 import { validateCart } from '@/utils/cartValidation';
@@ -34,11 +35,12 @@ interface CommentForm {
 export function CartPage() {
   const navigate = useNavigate();
   const { items, totalAmount, clearCart, updateQuantity, removeItem } = useCartStore();
+  const { user } = useAuthStore();
   const createOrder = useCreateOrder();
 
   const { register, handleSubmit } = useForm<CommentForm>();
 
-  const violations = validateCart(items);
+  const violations = validateCart(items, user?.deliveryCategory);
   const hasViolations = violations.length > 0;
 
   useEffect(() => {
