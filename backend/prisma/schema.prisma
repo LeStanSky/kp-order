@@ -13,6 +13,11 @@ enum UserRole {
   ADMIN
 }
 
+enum DeliveryCategory {
+  STANDARD
+  REMOTE
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -24,9 +29,10 @@ model User {
   email        String    @unique
   password     String
   name         String
-  role         UserRole  @default(CLIENT)
-  priceGroupId String?   @map("price_group_id")
-  managerId    String?   @map("manager_id")
+  role             UserRole         @default(CLIENT)
+  deliveryCategory DeliveryCategory @default(STANDARD) @map("delivery_category")
+  priceGroupId     String?          @map("price_group_id")
+  managerId        String?          @map("manager_id")
   isActive            Boolean   @default(true)
   mustChangePassword  Boolean   @default(false) @map("must_change_password")
   createdAt           DateTime  @default(now())
@@ -66,15 +72,6 @@ model PriceGroup {
   prices Price[]
 
   @@map("price_groups")
-}
-
-model SyncGroup {
-  id       String  @id @default(uuid())
-  name     String  @unique
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-
-  @@map("sync_groups")
 }
 
 model Product {

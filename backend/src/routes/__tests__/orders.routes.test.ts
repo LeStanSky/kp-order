@@ -70,6 +70,7 @@ describe('Orders Routes', () => {
       (db.price.findMany as jest.Mock).mockResolvedValue([
         { productId: 'prod-1', value: 2500, currency: 'RUB' },
       ]);
+      (db.product.findMany as jest.Mock).mockResolvedValue([{ id: 'prod-1', cleanName: 'Beer' }]);
       (mockRedis.incr as jest.Mock).mockResolvedValue(1);
       (mockRedis.expire as jest.Mock).mockResolvedValue(1);
       (db.$transaction as jest.Mock).mockImplementation(async (fn: any) => fn(db));
@@ -290,6 +291,7 @@ describe('Orders Routes', () => {
       (db.price.findMany as jest.Mock).mockResolvedValue([
         { productId: 'prod-1', value: 2500, currency: 'RUB' },
       ]);
+      (db.product.findMany as jest.Mock).mockResolvedValue([{ id: 'prod-1', cleanName: 'Beer' }]);
       (mockRedis.incr as jest.Mock).mockResolvedValue(2);
       (mockRedis.expire as jest.Mock).mockResolvedValue(1);
       (db.$transaction as jest.Mock).mockImplementation(async (fn: any) => fn(db));

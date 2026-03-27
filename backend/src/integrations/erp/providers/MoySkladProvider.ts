@@ -63,7 +63,6 @@ export class MoySkladProvider implements IERPProvider {
 
         const salePrices: ERPSalePrice[] = (row.salePrices || []).map((sp: any) => ({
           priceTypeName: sp.priceType?.name || '',
-          priceTypeExternalId: sp.priceType?.meta?.href?.split('/')?.pop(),
           value: (sp.value || 0) / 100, // kopecks → rubles
           currency: sp.currency?.isoCode || 'RUB',
         }));
