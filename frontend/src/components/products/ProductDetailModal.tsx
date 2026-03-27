@@ -124,7 +124,13 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
                 component="img"
                 src={product.imageUrl}
                 alt={displayName}
-                sx={{ width: '100%', borderRadius: 1, display: 'block' }}
+                sx={{
+                  width: '100%',
+                  maxHeight: 300,
+                  objectFit: 'contain',
+                  borderRadius: 1,
+                  display: 'block',
+                }}
               />
             ) : (
               <Box
