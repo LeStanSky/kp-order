@@ -68,13 +68,11 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
       }}
     >
       {/* Название + срок годности (только для MANAGER/ADMIN) */}
-      <TableCell>
-        <Typography
-          variant="body2"
-          fontWeight={500}
-          onClick={onOpen}
-          sx={onOpen ? { cursor: 'pointer', '&:hover': { color: 'primary.main' } } : undefined}
-        >
+      <TableCell
+        onClick={onOpen}
+        sx={onOpen ? { cursor: 'pointer', '&:hover': { color: 'primary.main' } } : undefined}
+      >
+        <Typography variant="body2" fontWeight={500}>
           {displayName}
         </Typography>
         {!isClient && product.expiryStatus && <ExpiryBadge expiryStatus={product.expiryStatus} />}

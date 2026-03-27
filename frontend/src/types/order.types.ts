@@ -4,7 +4,7 @@ export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 
 export interface OrderItemProduct {
   id: string;
-  name: string;
+  cleanName: string;
 }
 
 export interface OrderItem {
