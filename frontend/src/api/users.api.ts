@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { UserRole } from '@/types/user.types';
+import type { UserRole, DeliveryCategory } from '@/types/user.types';
 
 export interface AdminUser {
   id: string;
@@ -8,6 +8,7 @@ export interface AdminUser {
   role: UserRole;
   isActive: boolean;
   mustChangePassword: boolean;
+  deliveryCategory: DeliveryCategory;
   priceGroupId: string | null;
   managerId: string | null;
   priceGroup?: { id: string; name: string } | null;
@@ -21,6 +22,7 @@ export interface CreateUserParams {
   email: string;
   password: string;
   role: UserRole;
+  deliveryCategory?: DeliveryCategory;
   managerId?: string | null;
   priceGroupId?: string | null;
 }
@@ -30,6 +32,7 @@ export interface UpdateUserParams {
   email?: string;
   role?: UserRole;
   isActive?: boolean;
+  deliveryCategory?: DeliveryCategory;
   managerId?: string | null;
   priceGroupId?: string | null;
 }

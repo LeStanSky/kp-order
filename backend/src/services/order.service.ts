@@ -18,11 +18,20 @@ export const orderService = {
     if (!user.priceGroupId) throw new BadRequestError('User has no price group assigned');
 
     const productIds = input.items.map((i) => i.productId);
-    const prices = await prisma.price.findMany({
-      where: { productId: { in: productIds }, priceGroupId: user.priceGroupId },
-    });
+    const [prices, products] = await Promise.all([
+      prisma.price.findMany({
+        where: { productId: { in: productIds }, priceGroupId: user.priceGroupId },
+      }),
+      prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, cleanName: true },
+      }),
+    ]);
 
     const priceMap = new Map(prices.map((p: any) => [p.productId, p]));
+    const productMap = new Map(
+      products.map((p: { id: string; cleanName: string }) => [p.id, p.cleanName]),
+    );
 
     const missingPrices = productIds.filter((id) => !priceMap.has(id));
     if (missingPrices.length > 0) {
@@ -50,12 +59,20 @@ export const orderService = {
       items,
     });
 
+    const emailItems = items.map((item) => ({
+      name: productMap.get(item.productId) ?? '—',
+      quantity: item.quantity,
+      price: item.price,
+      total: item.price * item.quantity,
+    }));
+
     const emailData = {
       orderNumber,
       customerName: user.name,
       customerEmail: user.email,
       totalAmount,
       itemCount: items.length,
+      items: emailItems,
     };
     const manager = (user as any).manager;
     if (manager?.email) {

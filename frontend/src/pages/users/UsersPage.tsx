@@ -61,11 +61,17 @@ const ROLE_COLORS = {
   ADMIN: 'error',
 } as const;
 
+const DELIVERY_LABELS: Record<string, string> = {
+  STANDARD: 'Стандартная',
+  REMOTE: 'Удалённая',
+};
+
 const EMPTY_CREATE: CreateUserParams = {
   name: '',
   email: '',
   password: '',
   role: 'CLIENT',
+  deliveryCategory: 'STANDARD',
   managerId: null,
   priceGroupId: null,
 };
@@ -95,6 +101,7 @@ export function UsersPage() {
     setEditForm({
       role: user.role,
       isActive: user.isActive,
+      deliveryCategory: user.deliveryCategory,
       managerId: user.managerId,
       priceGroupId: user.priceGroupId,
     });
@@ -199,6 +206,7 @@ export function UsersPage() {
               <TableCell>Статус</TableCell>
               <TableCell>Менеджер</TableCell>
               <TableCell>Группа цен</TableCell>
+              <TableCell>Доставка</TableCell>
               <TableCell align="right">Действия</TableCell>
             </TableRow>
           </TableHead>
@@ -223,6 +231,9 @@ export function UsersPage() {
                 </TableCell>
                 <TableCell>{user.manager?.name ?? '—'}</TableCell>
                 <TableCell>{user.priceGroup?.name ?? '—'}</TableCell>
+                <TableCell>
+                  {DELIVERY_LABELS[user.deliveryCategory] ?? user.deliveryCategory}
+                </TableCell>
                 <TableCell align="right">
                   <IconButton
                     size="small"
@@ -293,6 +304,23 @@ export function UsersPage() {
                   {pg.name}
                 </MenuItem>
               ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Категория доставки</InputLabel>
+            <Select
+              value={editForm.deliveryCategory ?? 'STANDARD'}
+              label="Категория доставки"
+              onChange={(e) =>
+                setEditForm((f) => ({
+                  ...f,
+                  deliveryCategory: e.target.value as 'STANDARD' | 'REMOTE',
+                }))
+              }
+            >
+              <MenuItem value="STANDARD">Стандартная</MenuItem>
+              <MenuItem value="REMOTE">Удалённая (мин. 30 000 ₽)</MenuItem>
             </Select>
           </FormControl>
 
@@ -403,6 +431,23 @@ export function UsersPage() {
                     {pg.name}
                   </MenuItem>
                 ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Категория доставки</InputLabel>
+              <Select
+                value={createForm.deliveryCategory ?? 'STANDARD'}
+                label="Категория доставки"
+                onChange={(e) =>
+                  setCreateForm((f) => ({
+                    ...f,
+                    deliveryCategory: e.target.value as 'STANDARD' | 'REMOTE',
+                  }))
+                }
+              >
+                <MenuItem value="STANDARD">Стандартная</MenuItem>
+                <MenuItem value="REMOTE">Удалённая (мин. 30 000 ₽)</MenuItem>
               </Select>
             </FormControl>
           </DialogContent>

@@ -16,6 +16,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/utils/productDisplay';
 import { validateCart } from '@/utils/cartValidation';
 
@@ -27,8 +28,9 @@ interface CartDrawerProps {
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
   const navigate = useNavigate();
   const { items, updateQuantity, removeItem, clearCart, totalAmount } = useCartStore();
+  const { user } = useAuthStore();
 
-  const violations = validateCart(items);
+  const violations = validateCart(items, user?.deliveryCategory);
 
   const handleCheckout = () => {
     onClose();

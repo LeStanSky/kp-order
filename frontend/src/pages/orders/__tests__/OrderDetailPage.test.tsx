@@ -41,7 +41,7 @@ const mockOrder = {
       quantity: 2,
       price: 100,
       currency: 'RUB',
-      product: { id: 'p1', name: 'Молоко' },
+      product: { id: 'p1', cleanName: 'Молоко' },
     },
   ],
   createdAt: '2026-01-01T00:00:00.000Z',

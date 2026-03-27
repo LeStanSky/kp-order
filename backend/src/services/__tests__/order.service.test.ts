@@ -80,6 +80,10 @@ describe('orderService', () => {
       comment: 'Test order',
     };
 
+    beforeEach(() => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([{ id: 'prod-1', cleanName: 'Beer' }]);
+    });
+
     it('should create an order successfully', async () => {
       mockUserRepo.findById.mockResolvedValue(mockUser as any);
       (db.price.findMany as jest.Mock).mockResolvedValue([
@@ -429,6 +433,10 @@ describe('orderService', () => {
   });
 
   describe('repeatOrder', () => {
+    beforeEach(() => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([{ id: 'prod-1', cleanName: 'Beer' }]);
+    });
+
     it('should create a new order with items from original order', async () => {
       mockOrderRepo.findById.mockResolvedValue(mockOrder as any);
       mockUserRepo.findById.mockResolvedValue(mockUser as any);

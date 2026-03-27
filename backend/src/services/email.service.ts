@@ -13,12 +13,30 @@ const transporter = nodemailer.createTransport({
   auth: env.SMTP_USER && env.SMTP_PASS ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
 } as any);
 
+interface OrderEmailItem {
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
 interface OrderEmailData {
   orderNumber: string;
   customerName: string;
   customerEmail: string;
   totalAmount: number;
   itemCount: number;
+  items?: OrderEmailItem[];
+}
+
+function renderItemsTable(items: OrderEmailItem[]): string {
+  const rows = items
+    .map(
+      (i) =>
+        `<tr><td style="padding:4px 8px;border-bottom:1px solid #eee">${i.name}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right">${i.quantity}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right">${i.price.toFixed(2)}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right">${i.total.toFixed(2)}</td></tr>`,
+    )
+    .join('');
+  return `<table style="width:100%;border-collapse:collapse;margin:12px 0"><thead><tr style="background:#f5f5f5"><th style="padding:6px 8px;text-align:left">Товар</th><th style="padding:6px 8px;text-align:right">Кол-во</th><th style="padding:6px 8px;text-align:right">Цена</th><th style="padding:6px 8px;text-align:right">Сумма</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 export const emailService = {
@@ -54,8 +72,8 @@ export const emailService = {
           <h2>Новый заказ ${data.orderNumber}</h2>
           <p><strong>Менеджер:</strong> ${data.managerName}</p>
           <p><strong>Клиент:</strong> ${data.customerName} (${data.customerEmail})</p>
-          <p><strong>Позиций:</strong> ${data.itemCount}</p>
-          <p><strong>Сумма:</strong> ${data.totalAmount} руб.</p>
+          ${data.items?.length ? renderItemsTable(data.items) : `<p><strong>Позиций:</strong> ${data.itemCount}</p>`}
+          <p><strong>Итого:</strong> ${data.totalAmount.toFixed(2)} руб.</p>
         `,
       });
     } catch (error) {
@@ -85,8 +103,9 @@ export const emailService = {
         html: `
           <h2>Ваш заказ ${data.orderNumber} принят</h2>
           <p>Здравствуйте, ${data.customerName}!</p>
-          <p>Ваш заказ на ${data.itemCount} позиций на сумму ${data.totalAmount} руб. принят в обработку.</p>
-          <p>Номер заказа: <strong>${data.orderNumber}</strong></p>
+          <p>Ваш заказ принят в обработку.</p>
+          ${data.items?.length ? renderItemsTable(data.items) : `<p><strong>Позиций:</strong> ${data.itemCount}</p>`}
+          <p><strong>Итого:</strong> ${data.totalAmount.toFixed(2)} руб.</p>
         `,
       });
     } catch (error) {

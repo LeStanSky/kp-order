@@ -1,4 +1,5 @@
 export type UserRole = 'CLIENT' | 'MANAGER' | 'ADMIN';
+export type DeliveryCategory = 'STANDARD' | 'REMOTE';
 
 export interface PriceGroup {
   id: string;
@@ -10,6 +11,7 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  deliveryCategory?: DeliveryCategory;
   priceGroup?: PriceGroup;
 }
 

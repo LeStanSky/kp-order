@@ -124,7 +124,7 @@ export function OrderDetailPage() {
           <TableBody>
             {order.items.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.product.name}</TableCell>
+                <TableCell>{item.product.cleanName}</TableCell>
                 <TableCell align="right">
                   {formatPrice(item.price)} {item.currency}
                 </TableCell>

@@ -15,11 +15,18 @@ interface UserPayload {
   email: string;
   role: string;
   priceGroupId: string | null;
+  deliveryCategory: string;
 }
 
 function generateTokens(user: UserPayload): TokenPair {
   const accessToken = jwt.sign(
-    { id: user.id, email: user.email, role: user.role, priceGroupId: user.priceGroupId },
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      priceGroupId: user.priceGroupId,
+      deliveryCategory: user.deliveryCategory,
+    },
     env.JWT_SECRET,
     { expiresIn: env.JWT_EXPIRES_IN as any },
   );
@@ -101,7 +108,13 @@ export const authService = {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        deliveryCategory: user.deliveryCategory,
+      },
       mustChangePassword: user.mustChangePassword,
       ...tokens,
     };
@@ -139,7 +152,13 @@ export const authService = {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        deliveryCategory: user.deliveryCategory,
+      },
       ...tokens,
     };
   },
@@ -168,6 +187,7 @@ export const authService = {
       email: user.email,
       name: user.name,
       role: user.role,
+      deliveryCategory: user.deliveryCategory,
       priceGroup: user.priceGroup ? { id: user.priceGroup.id, name: user.priceGroup.name } : null,
     };
   },

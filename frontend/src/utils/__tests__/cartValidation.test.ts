@@ -112,6 +112,40 @@ describe('validateCart — per-item minimum', () => {
   });
 });
 
+describe('validateCart — REMOTE delivery category', () => {
+  it('no violation when total >= 30000', () => {
+    const violations = validateCart([makeItem({ price: 1000, quantity: 30 })], 'REMOTE');
+    expect(violations).toHaveLength(0);
+  });
+
+  it('violation when total < 30000', () => {
+    const violations = validateCart([makeItem({ price: 100, quantity: 10 })], 'REMOTE');
+    expect(violations.filter((v) => v.type === 'order_min')).toHaveLength(1);
+  });
+
+  it('violation message mentions 30 000 and current amount', () => {
+    const violations = validateCart([makeItem({ price: 500, quantity: 5 })], 'REMOTE');
+    const v = violations.find((v) => v.type === 'order_min')!;
+    expect(v.message).toMatch(/30\s?000/);
+    expect(v.message).toMatch(/2\s?500/);
+  });
+
+  it('no per-item minimum for REMOTE', () => {
+    const violations = validateCart([makeItem({ price: 15000, quantity: 2 })], 'REMOTE');
+    expect(violations.filter((v) => v.type === 'item_min_qty')).toHaveLength(0);
+  });
+
+  it('STANDARD rules apply when deliveryCategory is STANDARD', () => {
+    const violations = validateCart([makeItem({ quantity: 2 })], 'STANDARD');
+    expect(violations.filter((v) => v.type === 'item_min_qty')).toHaveLength(1);
+  });
+
+  it('STANDARD rules apply when deliveryCategory is undefined', () => {
+    const violations = validateCart([makeItem({ quantity: 2 })]);
+    expect(violations.filter((v) => v.type === 'item_min_qty')).toHaveLength(1);
+  });
+});
+
 describe('validateCart — valid carts', () => {
   it('returns empty array for KEG-only cart', () => {
     expect(validateCart([makeItem({ isKeg: true, quantity: 2 })])).toHaveLength(0);
