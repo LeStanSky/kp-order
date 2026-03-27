@@ -133,8 +133,16 @@ export const productRepository = {
   },
 
   async getCategories() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const categories = await prisma.product.findMany({
-      where: { isActive: true, category: { not: null } },
+      where: {
+        isActive: true,
+        category: { not: null },
+        stocks: { some: { quantity: { gt: 0 } } },
+        OR: [{ expiryDate: null }, { expiryDate: { gte: today } }],
+      },
       select: { category: true },
       distinct: ['category'],
       orderBy: { category: 'asc' },

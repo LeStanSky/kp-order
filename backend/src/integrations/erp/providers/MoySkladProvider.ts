@@ -1,7 +1,6 @@
 import { IERPProvider } from '../IERPProvider';
 import { ERPProduct, ERPSalePrice, ERPStock } from '../../../types/erp.types';
 import { env } from '../../../config/env';
-import { prisma } from '../../../config/database';
 import { logger } from '../../../utils/logger';
 import { ERPConnectionError } from '../../../utils/errors';
 
@@ -47,11 +46,6 @@ export class MoySkladProvider implements IERPProvider {
   private baseUrl = env.MOYSKLAD_BASE_URL;
 
   async getProducts(): Promise<ERPProduct[]> {
-    const syncGroups = await prisma.syncGroup.findMany({
-      where: { isActive: true },
-    });
-    const allowedGroups = new Set(syncGroups.map((g: { name: string }) => g.name));
-
     const products: ERPProduct[] = [];
     let offset = 0;
     let hasMore = true;
@@ -64,10 +58,8 @@ export class MoySkladProvider implements IERPProvider {
 
       for (const row of rows) {
         const pathName = row.pathName || '';
-        // pathName can be nested like "Jaws/Подкатегория", take the top-level group
         const topGroup = pathName.split('/')[0].trim();
-
-        if (!allowedGroups.has(topGroup)) continue;
+        if (!topGroup) continue;
 
         const salePrices: ERPSalePrice[] = (row.salePrices || []).map((sp: any) => ({
           priceTypeName: sp.priceType?.name || '',
