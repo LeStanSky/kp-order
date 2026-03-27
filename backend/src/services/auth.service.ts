@@ -108,7 +108,13 @@ export const authService = {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        deliveryCategory: user.deliveryCategory,
+      },
       mustChangePassword: user.mustChangePassword,
       ...tokens,
     };
@@ -146,7 +152,13 @@ export const authService = {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        deliveryCategory: user.deliveryCategory,
+      },
       ...tokens,
     };
   },
