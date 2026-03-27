@@ -10,7 +10,6 @@ export interface ERPProduct {
 
 export interface ERPSalePrice {
   priceTypeName: string;
-  priceTypeExternalId?: string;
   value: number; // in rubles
   currency: string;
 }

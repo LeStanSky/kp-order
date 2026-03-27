@@ -68,15 +68,6 @@ model PriceGroup {
   @@map("price_groups")
 }
 
-model SyncGroup {
-  id       String  @id @default(uuid())
-  name     String  @unique
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-
-  @@map("sync_groups")
-}
-
 model Product {
   id          String    @id @default(uuid())
   externalId  String    @unique @map("external_id")

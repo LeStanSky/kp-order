@@ -20,23 +20,6 @@ const PRICE_GROUPS = [
   'Прайс ХС',
 ];
 
-const SYNC_GROUPS = [
-  'Jaws',
-  'Jaws Розлив',
-  'Lapochka',
-  'Mjolnir',
-  'Mjolnir Розлив',
-  'Ostrovica',
-  'Ostrovica розлив',
-  'Бродилка сидры',
-  'Бродилка сидры Розлив',
-  'Полукультурка сидры',
-  'Полукультурка сидры Розлив',
-  'Степь и Ветер',
-  'Степь и Ветер розлив',
-  'Чипсы',
-];
-
 async function main() {
   console.log('Seeding...');
 
@@ -51,16 +34,6 @@ async function main() {
     priceGroupMap.set(name, pg.id);
   }
   console.log(`  ${PRICE_GROUPS.length} price groups`);
-
-  // Sync groups
-  for (const name of SYNC_GROUPS) {
-    await prisma.syncGroup.upsert({
-      where: { name },
-      create: { name },
-      update: {},
-    });
-  }
-  console.log(`  ${SYNC_GROUPS.length} sync groups`);
 
   // Users
   const password = await bcrypt.hash('password123', 12);
