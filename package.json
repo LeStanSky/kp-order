@@ -1,6 +1,6 @@
 {
   "name": "erpstock",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "ERPStock - web app for ERP stock management",
   "scripts": {

@@ -115,6 +115,9 @@ export const authService = {
         role: user.role,
         deliveryCategory: user.deliveryCategory,
         canOrder: user.canOrder,
+        manager: user.manager
+          ? { id: user.manager.id, name: user.manager.name, email: user.manager.email }
+          : null,
       },
       mustChangePassword: user.mustChangePassword,
       ...tokens,
@@ -124,7 +127,11 @@ export const authService = {
   async refresh(refreshToken: string) {
     const stored = await prisma.refreshToken.findUnique({
       where: { token: refreshToken },
-      include: { user: true },
+      include: {
+        user: {
+          include: { manager: { select: { id: true, name: true, email: true } } },
+        },
+      },
     });
 
     if (!stored || stored.expiresAt < new Date()) {
@@ -160,6 +167,9 @@ export const authService = {
         role: user.role,
         deliveryCategory: user.deliveryCategory,
         canOrder: user.canOrder,
+        manager: user.manager
+          ? { id: user.manager.id, name: user.manager.name, email: user.manager.email }
+          : null,
       },
       ...tokens,
     };
@@ -192,6 +202,9 @@ export const authService = {
       deliveryCategory: user.deliveryCategory,
       canOrder: user.canOrder,
       priceGroup: user.priceGroup ? { id: user.priceGroup.id, name: user.priceGroup.name } : null,
+      manager: user.manager
+        ? { id: user.manager.id, name: user.manager.name, email: user.manager.email }
+        : null,
     };
   },
 };

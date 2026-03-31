@@ -48,6 +48,18 @@ describe('registerSchema', () => {
     }
   });
 
+  it('should lowercase email', () => {
+    const result = registerSchema.safeParse({
+      email: 'User@Example.COM',
+      password: 'password123',
+      name: 'John Doe',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.email).toBe('user@example.com');
+    }
+  });
+
   it('should reject short name (< 2 chars)', () => {
     const result = registerSchema.safeParse({
       email: 'user@example.com',
@@ -65,6 +77,17 @@ describe('loginSchema', () => {
       password: 'password123',
     });
     expect(result.success).toBe(true);
+  });
+
+  it('should lowercase email', () => {
+    const result = loginSchema.safeParse({
+      email: 'User@Example.COM',
+      password: 'password123',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.email).toBe('user@example.com');
+    }
   });
 
   it('should reject missing email', () => {

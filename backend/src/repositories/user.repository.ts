@@ -27,7 +27,10 @@ export const userRepository = {
   async findByEmail(email: string) {
     return prisma.user.findUnique({
       where: { email },
-      include: { priceGroup: true },
+      include: {
+        priceGroup: true,
+        manager: { select: { id: true, name: true, email: true } },
+      },
     });
   },
 

@@ -17,7 +17,10 @@ import { authApi } from '@/api/auth.api';
 import { useAuthStore } from '@/store/authStore';
 
 const loginSchema = z.object({
-  email: z.string().email('Введите корректный email'),
+  email: z
+    .string()
+    .email('Введите корректный email')
+    .transform((v) => v.toLowerCase()),
   password: z.string().min(8, 'Пароль должен быть не менее 8 символов'),
 });
 

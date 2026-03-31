@@ -6,6 +6,12 @@ export interface PriceGroup {
   name: string;
 }
 
+export interface Manager {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -14,6 +20,7 @@ export interface User {
   deliveryCategory?: DeliveryCategory;
   canOrder?: boolean;
   priceGroup?: PriceGroup;
+  manager?: Manager | null;
 }
 
 export interface AuthResponse {
