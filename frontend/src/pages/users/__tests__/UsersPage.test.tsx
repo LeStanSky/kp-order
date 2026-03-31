@@ -294,6 +294,31 @@ describe('UsersPage', () => {
     expect(screen.getByLabelText(/может заказывать/i)).toBeInTheDocument();
   });
 
+  it('toggles canOrder switch in edit dialog', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => expect(screen.getByText('Иван Клиент')).toBeInTheDocument());
+
+    const editButtons = screen.getAllByRole('button', { name: /редактировать/i });
+    fireEvent.click(editButtons[0]);
+
+    const canOrderSwitch = screen.getByLabelText(/может заказывать/i);
+    expect(canOrderSwitch).toBeChecked();
+    fireEvent.click(canOrderSwitch);
+    expect(canOrderSwitch).not.toBeChecked();
+  });
+
+  it('toggles canOrder switch in create dialog', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => expect(screen.getByText('Иван Клиент')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /создать пользователя/i }));
+
+    const canOrderSwitch = screen.getByLabelText(/может заказывать/i);
+    expect(canOrderSwitch).toBeChecked();
+    fireEvent.click(canOrderSwitch);
+    expect(canOrderSwitch).not.toBeChecked();
+  });
+
   it('calls resetPassword mutate when confirmed', async () => {
     const mockMutate = vi.fn();
     const { useResetPassword } = await import('@/hooks/useUsers');

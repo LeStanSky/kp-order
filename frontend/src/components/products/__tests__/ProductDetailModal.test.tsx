@@ -127,6 +127,13 @@ describe('ProductDetailModal — роли', () => {
     expect(screen.queryByRole('button', { name: /в корзину/i })).not.toBeInTheDocument();
   });
 
+  it('CLIENT with canOrder=false: no "В корзину" button', () => {
+    const viewOnlyClient: User = { ...clientUser, canOrder: false };
+    useAuthStore.getState().setAuth(viewOnlyClient, tokens);
+    renderModal(makeProduct({ stock: 5 }));
+    expect(screen.queryByRole('button', { name: /в корзину/i })).not.toBeInTheDocument();
+  });
+
   it('MANAGER: no "В корзину" button', () => {
     useAuthStore.getState().setAuth(managerUser, tokens);
     renderModal(makeProduct({ stock: 5 }));
