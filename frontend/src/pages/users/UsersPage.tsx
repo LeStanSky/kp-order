@@ -72,6 +72,7 @@ const EMPTY_CREATE: CreateUserParams = {
   password: '',
   role: 'CLIENT',
   deliveryCategory: 'STANDARD',
+  canOrder: true,
   managerId: null,
   priceGroupId: null,
 };
@@ -101,6 +102,7 @@ export function UsersPage() {
     setEditForm({
       role: user.role,
       isActive: user.isActive,
+      canOrder: user.canOrder,
       deliveryCategory: user.deliveryCategory,
       managerId: user.managerId,
       priceGroupId: user.priceGroupId,
@@ -333,6 +335,17 @@ export function UsersPage() {
             }
             label="Активен"
           />
+          {editForm.role === 'CLIENT' && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={editForm.canOrder ?? true}
+                  onChange={(e) => setEditForm((f) => ({ ...f, canOrder: e.target.checked }))}
+                />
+              }
+              label="Может заказывать"
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditClose}>Отмена</Button>
@@ -450,6 +463,18 @@ export function UsersPage() {
                 <MenuItem value="REMOTE">Удалённая (мин. 30 000 ₽)</MenuItem>
               </Select>
             </FormControl>
+
+            {createForm.role === 'CLIENT' && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={createForm.canOrder ?? true}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, canOrder: e.target.checked }))}
+                  />
+                }
+                label="Может заказывать"
+              />
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCreateClose}>Отмена</Button>

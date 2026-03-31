@@ -114,6 +114,7 @@ export const authService = {
         name: user.name,
         role: user.role,
         deliveryCategory: user.deliveryCategory,
+        canOrder: user.canOrder,
       },
       mustChangePassword: user.mustChangePassword,
       ...tokens,
@@ -158,6 +159,7 @@ export const authService = {
         name: user.name,
         role: user.role,
         deliveryCategory: user.deliveryCategory,
+        canOrder: user.canOrder,
       },
       ...tokens,
     };
@@ -188,6 +190,7 @@ export const authService = {
       name: user.name,
       role: user.role,
       deliveryCategory: user.deliveryCategory,
+      canOrder: user.canOrder,
       priceGroup: user.priceGroup ? { id: user.priceGroup.id, name: user.priceGroup.name } : null,
     };
   },

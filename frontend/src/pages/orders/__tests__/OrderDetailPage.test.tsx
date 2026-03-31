@@ -140,6 +140,17 @@ describe('OrderDetailPage', () => {
     expect(screen.queryByRole('button', { name: /повторить|repeat/i })).not.toBeInTheDocument();
   });
 
+  it('does not show repeat button for CLIENT with canOrder=false', async () => {
+    const viewOnlyClient: User = { ...clientUser, canOrder: false };
+    useAuthStore.getState().clearAuth();
+    useAuthStore.getState().setAuth(viewOnlyClient, tokens);
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByText('ORD-001')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: /повторить|repeat/i })).not.toBeInTheDocument();
+  });
+
   it('does not show delete button for CLIENT', async () => {
     renderWithProviders(<OrderDetailPage />);
     await waitFor(() => {

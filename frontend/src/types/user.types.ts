@@ -12,6 +12,7 @@ export interface User {
   name: string;
   role: UserRole;
   deliveryCategory?: DeliveryCategory;
+  canOrder?: boolean;
   priceGroup?: PriceGroup;
 }
 
