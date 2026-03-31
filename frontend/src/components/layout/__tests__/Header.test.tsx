@@ -73,6 +73,28 @@ describe('Header', () => {
     expect(screen.queryByTestId('cart-icon-btn')).not.toBeInTheDocument();
   });
 
+  it('shows manager tooltip on user name hover', async () => {
+    const clientWithManager: User = {
+      ...clientUser,
+      manager: { id: 'mgr-1', name: 'Manager One', email: 'mgr@example.com' },
+    };
+    useAuthStore.getState().setAuth(clientWithManager, tokens);
+    renderWithProviders(<Header />);
+
+    await userEvent.hover(screen.getByText('Client User'));
+    expect(await screen.findByText('Ваш менеджер')).toBeInTheDocument();
+    expect(screen.getByText('Manager One')).toBeInTheDocument();
+    expect(screen.getByText('mgr@example.com')).toBeInTheDocument();
+  });
+
+  it('does not show manager tooltip when no manager', async () => {
+    useAuthStore.getState().setAuth(clientUser, tokens);
+    renderWithProviders(<Header />);
+
+    await userEvent.hover(screen.getByText('Client User'));
+    expect(screen.queryByText(/ваш менеджер/i)).not.toBeInTheDocument();
+  });
+
   it('shows cart badge with item count', () => {
     useAuthStore.getState().setAuth(clientUser, tokens);
     useCartStore
