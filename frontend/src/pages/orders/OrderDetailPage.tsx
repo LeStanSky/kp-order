@@ -36,7 +36,6 @@ export function OrderDetailPage() {
   const { mutate: repeatOrder, isPending: repeating } = useRepeatOrder();
   const { mutate: deleteOrder, isPending: deleting } = useDeleteOrder();
   const isAdmin = useAuthStore((s) => s.hasRole('ADMIN'));
-  const isManager = useAuthStore((s) => s.hasRole('MANAGER'));
   const canOrder = useAuthStore((s) => s.hasRole('CLIENT') && s.user?.canOrder !== false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);

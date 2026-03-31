@@ -37,7 +37,7 @@ interface ProductDetailModalProps {
 }
 
 export function ProductDetailModal({ product, onClose }: ProductDetailModalProps) {
-  const { hasRole } = useAuthStore();
+  const { hasRole, user } = useAuthStore();
   const { items: cartItems, addItem } = useCartStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [qty, setQty] = useState(0);
@@ -68,7 +68,6 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
 
   if (!product) return null;
 
-  const { user } = useAuthStore();
   const isClient = hasRole('CLIENT');
   const canOrder = isClient && user?.canOrder !== false;
   const isAdmin = hasRole('ADMIN');
