@@ -27,11 +27,12 @@ interface ProductRowProps {
 }
 
 export function ProductRow({ product, onOpen }: ProductRowProps) {
-  const { hasRole } = useAuthStore();
+  const { hasRole, user } = useAuthStore();
   const { items, addItem, updateQuantity } = useCartStore();
   const [inputQty, setInputQty] = useState(0);
 
   const isClient = hasRole('CLIENT');
+  const canOrder = isClient && user?.canOrder !== false;
   const cartItem = items.find((i) => i.productId === product.id);
 
   const displayName = resolveDisplayName(product.name, product.unit);
@@ -103,8 +104,8 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
         )}
       </TableCell>
 
-      {/* Кол-во + кнопка (только для CLIENT) */}
-      {isClient && (
+      {/* Кол-во + кнопка (только для CLIENT с canOrder) */}
+      {canOrder && (
         <>
           <TableCell align="center" sx={{ width: 100 }}>
             <TextField

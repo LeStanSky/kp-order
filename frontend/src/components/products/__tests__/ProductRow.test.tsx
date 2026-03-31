@@ -55,6 +55,24 @@ describe('ProductRow — expiry badge', () => {
   });
 });
 
+describe('ProductRow — canOrder flag', () => {
+  it('hides cart controls for CLIENT with canOrder=false', () => {
+    const viewOnlyClient: User = { ...clientUser, canOrder: false };
+    useAuthStore.getState().setAuth(viewOnlyClient, tokens);
+    renderRow(makeProduct());
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('AddShoppingCartIcon')).not.toBeInTheDocument();
+  });
+
+  it('shows cart controls for CLIENT with canOrder=true', () => {
+    const orderClient: User = { ...clientUser, canOrder: true };
+    useAuthStore.getState().setAuth(orderClient, tokens);
+    renderRow(makeProduct());
+    expect(screen.getByRole('spinbutton')).toBeInTheDocument();
+    expect(screen.getByTestId('AddShoppingCartIcon')).toBeInTheDocument();
+  });
+});
+
 describe('ProductRow — РОЗЛИВ stock display (дкл → штуки)', () => {
   beforeEach(() => {
     useAuthStore.getState().setAuth(clientUser, tokens);

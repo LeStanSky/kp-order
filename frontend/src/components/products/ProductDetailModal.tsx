@@ -68,7 +68,9 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
 
   if (!product) return null;
 
+  const { user } = useAuthStore();
   const isClient = hasRole('CLIENT');
+  const canOrder = isClient && user?.canOrder !== false;
   const isAdmin = hasRole('ADMIN');
 
   const displayName = resolveDisplayName(product.name, product.unit);
@@ -228,7 +230,7 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
               )}
             </Stack>
 
-            {isClient && !outOfStock && (
+            {canOrder && !outOfStock && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <TextField
                   type="number"

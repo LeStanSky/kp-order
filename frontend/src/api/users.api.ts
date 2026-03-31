@@ -7,6 +7,7 @@ export interface AdminUser {
   name: string;
   role: UserRole;
   isActive: boolean;
+  canOrder: boolean;
   mustChangePassword: boolean;
   deliveryCategory: DeliveryCategory;
   priceGroupId: string | null;
@@ -23,6 +24,7 @@ export interface CreateUserParams {
   password: string;
   role: UserRole;
   deliveryCategory?: DeliveryCategory;
+  canOrder?: boolean;
   managerId?: string | null;
   priceGroupId?: string | null;
 }
@@ -32,6 +34,7 @@ export interface UpdateUserParams {
   email?: string;
   role?: UserRole;
   isActive?: boolean;
+  canOrder?: boolean;
   deliveryCategory?: DeliveryCategory;
   managerId?: string | null;
   priceGroupId?: string | null;

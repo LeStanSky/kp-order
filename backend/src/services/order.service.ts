@@ -15,6 +15,7 @@ export const orderService = {
   async createOrder(userId: string, input: CreateOrderInput) {
     const user = await userRepository.findById(userId);
     if (!user) throw new NotFoundError('User not found');
+    if (!user.canOrder) throw new ForbiddenError('User is not allowed to place orders');
     if (!user.priceGroupId) throw new BadRequestError('User has no price group assigned');
 
     const productIds = input.items.map((i) => i.productId);

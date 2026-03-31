@@ -44,7 +44,7 @@ export function ProductsPage() {
   const [category, setCategory] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const { hasRole } = useAuthStore();
+  const { hasRole, user } = useAuthStore();
 
   const toggleCategory = (catName: string) => {
     setCollapsed((prev) => {
@@ -55,6 +55,7 @@ export function ProductsPage() {
     });
   };
   const isClient = hasRole('CLIENT');
+  const canOrder = isClient && user?.canOrder !== false;
   const isExpiredView = category === EXPIRED_CATEGORY;
 
   const {
@@ -130,7 +131,7 @@ export function ProductsPage() {
                   <TableCell align="center">Ед.</TableCell>
                   <TableCell align="right">Остаток</TableCell>
                   <TableCell align="right">Цена</TableCell>
-                  {isClient && (
+                  {canOrder && (
                     <>
                       <TableCell align="center">Кол-во</TableCell>
                       <TableCell align="center" />
@@ -150,7 +151,7 @@ export function ProductsPage() {
                         onClick={() => toggleCategory(catName)}
                       >
                         <TableCell
-                          colSpan={isClient ? 7 : 4}
+                          colSpan={canOrder ? 7 : 4}
                           sx={{
                             py: 0.5,
                             fontWeight: 700,

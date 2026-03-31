@@ -44,10 +44,10 @@ export function CartPage() {
   const hasViolations = violations.length > 0;
 
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 || user?.canOrder === false) {
       navigate('/products');
     }
-  }, [items.length, navigate]);
+  }, [items.length, user?.canOrder, navigate]);
 
   const handleQtyChange = (productId: string, current: number, delta: number) => {
     const next = current + delta;

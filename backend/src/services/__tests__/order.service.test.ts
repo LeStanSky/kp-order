@@ -27,6 +27,7 @@ const mockUser = {
   priceGroupId: 'pg-1',
   password: 'hashed',
   isActive: true,
+  canOrder: true,
   managerId: 'manager-1',
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -130,6 +131,13 @@ describe('orderService', () => {
       await expect(orderService.createOrder('user-1', createInput)).rejects.toThrow(
         BadRequestError,
       );
+    });
+
+    it('should throw ForbiddenError if user canOrder is false', async () => {
+      const viewOnlyUser = { ...mockUser, canOrder: false };
+      mockUserRepo.findById.mockResolvedValue(viewOnlyUser as any);
+
+      await expect(orderService.createOrder('user-1', createInput)).rejects.toThrow(ForbiddenError);
     });
 
     it('should send email notifications after creating order', async () => {

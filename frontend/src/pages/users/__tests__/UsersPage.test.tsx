@@ -22,6 +22,7 @@ const mockUsers = [
     email: 'client@test.com',
     role: 'CLIENT' as const,
     isActive: true,
+    canOrder: true,
     mustChangePassword: false,
     priceGroupId: 'pg-1',
     managerId: 'user-2',
@@ -36,6 +37,7 @@ const mockUsers = [
     email: 'manager@test.com',
     role: 'MANAGER' as const,
     isActive: false,
+    canOrder: true,
     mustChangePassword: false,
     priceGroupId: null,
     managerId: null,
@@ -260,6 +262,36 @@ describe('UsersPage', () => {
 
     const resetButtons = screen.getAllByRole('button', { name: /сбросить пароль/i });
     expect(resetButtons.length).toBe(2);
+  });
+
+  it('shows "Может заказывать" switch when editing a CLIENT', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => expect(screen.getByText('Иван Клиент')).toBeInTheDocument());
+
+    const editButtons = screen.getAllByRole('button', { name: /редактировать/i });
+    fireEvent.click(editButtons[0]); // CLIENT
+
+    expect(screen.getByLabelText(/может заказывать/i)).toBeInTheDocument();
+  });
+
+  it('does not show "Может заказывать" switch when editing a MANAGER', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => expect(screen.getByText('Иван Клиент')).toBeInTheDocument());
+
+    const editButtons = screen.getAllByRole('button', { name: /редактировать/i });
+    fireEvent.click(editButtons[1]); // MANAGER
+
+    expect(screen.queryByLabelText(/может заказывать/i)).not.toBeInTheDocument();
+  });
+
+  it('shows "Может заказывать" switch in create dialog for CLIENT role', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => expect(screen.getByText('Иван Клиент')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /создать пользователя/i }));
+
+    // Default role is CLIENT, so the switch should be visible
+    expect(screen.getByLabelText(/может заказывать/i)).toBeInTheDocument();
   });
 
   it('calls resetPassword mutate when confirmed', async () => {
