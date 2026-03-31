@@ -143,9 +143,46 @@ export function Header() {
           </IconButton>
         )}
 
-        <Typography variant="body2" sx={{ mx: 1, display: { xs: 'none', md: 'block' } }}>
-          {user?.name}
-        </Typography>
+        <Tooltip
+          title={
+            user?.manager ? (
+              <Box sx={{ p: 0.5 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  Ваш менеджер
+                </Typography>
+                <Typography variant="body2">{user.manager.name}</Typography>
+                <Typography variant="body2">{user.manager.email}</Typography>
+              </Box>
+            ) : (
+              ''
+            )
+          }
+          disableHoverListener={!user?.manager}
+          slotProps={{
+            tooltip: {
+              sx: {
+                bgcolor: 'background.paper',
+                color: 'text.primary',
+                boxShadow: 3,
+                borderRadius: 2,
+                px: 2,
+                py: 1,
+                fontSize: '0.875rem',
+              },
+            },
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              mx: 1,
+              display: { xs: 'none', md: 'block' },
+              cursor: user?.manager ? 'pointer' : 'default',
+            }}
+          >
+            {user?.name}
+          </Typography>
+        </Tooltip>
 
         <IconButton
           color="inherit"
