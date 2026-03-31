@@ -33,6 +33,7 @@ const mockUser = {
   managerId: null,
   password: 'hashed',
   isActive: true,
+  canOrder: true,
   createdAt: new Date(),
   updatedAt: new Date(),
   priceGroup: { id: 'pg-1', name: 'Retail' },

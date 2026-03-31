@@ -37,7 +37,7 @@ interface ProductDetailModalProps {
 }
 
 export function ProductDetailModal({ product, onClose }: ProductDetailModalProps) {
-  const { hasRole } = useAuthStore();
+  const { hasRole, user } = useAuthStore();
   const { items: cartItems, addItem } = useCartStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [qty, setQty] = useState(0);
@@ -69,6 +69,7 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
   if (!product) return null;
 
   const isClient = hasRole('CLIENT');
+  const canOrder = isClient && user?.canOrder !== false;
   const isAdmin = hasRole('ADMIN');
 
   const displayName = resolveDisplayName(product.name, product.unit);
@@ -124,7 +125,13 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
                 component="img"
                 src={product.imageUrl}
                 alt={displayName}
-                sx={{ width: '100%', borderRadius: 1, display: 'block' }}
+                sx={{
+                  width: '100%',
+                  maxHeight: 300,
+                  objectFit: 'contain',
+                  borderRadius: 1,
+                  display: 'block',
+                }}
               />
             ) : (
               <Box
@@ -222,7 +229,7 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
               )}
             </Stack>
 
-            {isClient && !outOfStock && (
+            {canOrder && !outOfStock && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <TextField
                   type="number"

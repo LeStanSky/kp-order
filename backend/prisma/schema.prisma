@@ -34,6 +34,7 @@ model User {
   priceGroupId     String?          @map("price_group_id")
   managerId        String?          @map("manager_id")
   isActive            Boolean   @default(true)
+  canOrder            Boolean   @default(true)  @map("can_order")
   mustChangePassword  Boolean   @default(false) @map("must_change_password")
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

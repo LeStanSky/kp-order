@@ -15,7 +15,14 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
-app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR)));
+app.use(
+  '/uploads',
+  (_req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(path.resolve(env.UPLOAD_DIR)),
+);
 app.use('/api', apiLimiter);
 
 // Health check

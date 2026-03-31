@@ -66,6 +66,13 @@ describe('Header', () => {
     expect(screen.queryByRole('button', { name: /пользователи/i })).not.toBeInTheDocument();
   });
 
+  it('does not show cart icon for CLIENT with canOrder=false', () => {
+    const viewOnlyClient: User = { ...clientUser, canOrder: false };
+    useAuthStore.getState().setAuth(viewOnlyClient, tokens);
+    renderWithProviders(<Header />);
+    expect(screen.queryByTestId('cart-icon-btn')).not.toBeInTheDocument();
+  });
+
   it('shows cart badge with item count', () => {
     useAuthStore.getState().setAuth(clientUser, tokens);
     useCartStore

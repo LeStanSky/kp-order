@@ -50,6 +50,7 @@ export function Header() {
   };
 
   const isClient = hasRole('CLIENT');
+  const canOrder = isClient && user?.canOrder !== false;
   const isAdmin = hasRole('ADMIN');
   const onProducts = location.pathname === '/products';
   const onOrders = location.pathname.startsWith('/orders');
@@ -129,7 +130,7 @@ export function Header() {
 
         <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'block' } }} />
 
-        {isClient && (
+        {canOrder && (
           <IconButton
             color="inherit"
             onClick={() => navigate('/cart')}

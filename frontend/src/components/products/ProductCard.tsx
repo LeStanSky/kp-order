@@ -9,9 +9,10 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { hasRole } = useAuthStore();
+  const { hasRole, user } = useAuthStore();
   const { addItem } = useCartStore();
   const isClient = hasRole('CLIENT');
+  const canOrder = isClient && user?.canOrder !== false;
 
   const price = product.prices[0];
 
@@ -49,7 +50,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </Box>
       </CardContent>
 
-      {isClient && (
+      {canOrder && (
         <CardActions>
           <Button
             size="small"

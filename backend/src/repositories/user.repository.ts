@@ -8,6 +8,7 @@ export interface CreateUserData {
   role?: UserRole;
   priceGroupId?: string | null;
   managerId?: string | null;
+  canOrder?: boolean;
   mustChangePassword?: boolean;
 }
 
@@ -40,7 +41,12 @@ export const userRepository = {
   async update(
     id: string,
     data: Partial<
-      CreateUserData & { isActive: boolean; managerId: string | null; mustChangePassword: boolean }
+      CreateUserData & {
+        isActive: boolean;
+        canOrder: boolean;
+        managerId: string | null;
+        mustChangePassword: boolean;
+      }
     >,
   ) {
     return prisma.user.update({

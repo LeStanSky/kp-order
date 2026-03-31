@@ -9,6 +9,7 @@ export const createUserSchema = z
     deliveryCategory: z.enum(['STANDARD', 'REMOTE']).optional(),
     managerId: z.string().uuid().nullable().optional(),
     priceGroupId: z.string().uuid().nullable().optional(),
+    canOrder: z.boolean().optional(),
   })
   .strict();
 
@@ -23,6 +24,7 @@ export const updateUserSchema = z
     deliveryCategory: z.enum(['STANDARD', 'REMOTE']).optional(),
     managerId: z.string().uuid().nullable().optional(),
     priceGroupId: z.string().uuid().nullable().optional(),
+    canOrder: z.boolean().optional(),
   })
   .strict();
 
