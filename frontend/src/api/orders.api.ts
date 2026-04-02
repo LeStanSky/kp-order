@@ -38,8 +38,11 @@ export const ordersApi = {
     return data;
   },
 
-  repeatOrder: async (id: string): Promise<Order> => {
-    const { data } = await apiClient.post<Order>(`/api/orders/${id}/repeat`);
+  repeatOrder: async (id: string, comment?: string): Promise<Order> => {
+    const { data } = await apiClient.post<Order>(
+      `/api/orders/${id}/repeat`,
+      comment ? { comment } : undefined,
+    );
     return data;
   },
 

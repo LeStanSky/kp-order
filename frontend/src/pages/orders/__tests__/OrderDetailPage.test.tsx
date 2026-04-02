@@ -127,7 +127,33 @@ describe('OrderDetailPage', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /повторить|repeat/i }));
     fireEvent.click(screen.getByRole('button', { name: /подтвердить/i }));
-    expect(mockMutate).toHaveBeenCalledWith('order-1', expect.any(Object));
+    expect(mockMutate).toHaveBeenCalledWith(
+      { id: 'order-1', comment: undefined },
+      expect.any(Object),
+    );
+  });
+
+  it('passes comment to repeatOrder when provided', async () => {
+    const mockMutate = vi.fn();
+    const { useRepeatOrder } = await import('@/hooks/useOrders');
+    vi.mocked(useRepeatOrder).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useRepeatOrder>);
+
+    renderWithProviders(<OrderDetailPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /повторить|repeat/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /повторить|repeat/i }));
+    fireEvent.change(screen.getByLabelText(/комментарий/i), {
+      target: { value: 'Доставить до 15:00' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /подтвердить/i }));
+    expect(mockMutate).toHaveBeenCalledWith(
+      { id: 'order-1', comment: 'Доставить до 15:00' },
+      expect.any(Object),
+    );
   });
 
   it('does not show repeat button for MANAGER', async () => {
