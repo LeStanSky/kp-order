@@ -40,7 +40,8 @@ export function useCancelOrder() {
 export function useRepeatOrder() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ordersApi.repeatOrder(id),
+    mutationFn: ({ id, comment }: { id: string; comment?: string }) =>
+      ordersApi.repeatOrder(id, comment),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['orders'] });
     },

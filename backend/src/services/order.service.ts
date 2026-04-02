@@ -74,6 +74,7 @@ export const orderService = {
       totalAmount,
       itemCount: items.length,
       items: emailItems,
+      comment: input.comment,
     };
     const manager = (user as any).manager;
     if (manager?.email) {
@@ -151,7 +152,7 @@ export const orderService = {
     await orderRepository.deleteById(orderId);
   },
 
-  async repeatOrder(orderId: string, reqUser: RequestUser) {
+  async repeatOrder(orderId: string, reqUser: RequestUser, comment?: string) {
     const order = await orderRepository.findById(orderId);
     if (!order) throw new NotFoundError('Order not found');
 
@@ -164,7 +165,7 @@ export const orderService = {
       quantity: item.quantity,
     }));
 
-    return this.createOrder(reqUser.id, { items });
+    return this.createOrder(reqUser.id, { items, comment });
   },
 
   async checkOrderAccess(order: any, reqUser: RequestUser) {

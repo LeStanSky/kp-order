@@ -486,6 +486,28 @@ describe('orderService', () => {
       ).rejects.toThrow(ForbiddenError);
     });
 
+    it('should pass comment to createOrder when provided', async () => {
+      mockOrderRepo.findById.mockResolvedValue(mockOrder as any);
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      (db.price.findMany as jest.Mock).mockResolvedValue([
+        { productId: 'prod-1', value: 2500, currency: 'RUB' },
+      ]);
+      mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-004');
+      mockOrderRepo.create.mockResolvedValue(mockOrder as any);
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
+      mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+
+      await orderService.repeatOrder(
+        'order-1',
+        { id: 'user-1', role: 'CLIENT' as const },
+        'Доставить до 15:00',
+      );
+
+      expect(mockOrderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ comment: 'Доставить до 15:00' }),
+      );
+    });
+
     it('should use current prices, not original prices', async () => {
       mockOrderRepo.findById.mockResolvedValue(mockOrder as any);
       mockUserRepo.findById.mockResolvedValue(mockUser as any);

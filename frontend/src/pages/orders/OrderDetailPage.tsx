@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  TextField,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { format } from 'date-fns';
@@ -39,19 +40,26 @@ export function OrderDetailPage() {
   const canOrder = useAuthStore((s) => s.hasRole('CLIENT') && s.user?.canOrder !== false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [repeatComment, setRepeatComment] = useState('');
 
-  const handleRepeatClick = () => setConfirmOpen(true);
+  const handleRepeatClick = () => {
+    setRepeatComment('');
+    setConfirmOpen(true);
+  };
 
   const handleConfirm = () => {
     setConfirmOpen(false);
     if (!order) return;
-    repeatOrder(order.id, {
-      onSuccess: () => {
-        toast.success('Заказ повторён');
-        navigate('/orders');
+    repeatOrder(
+      { id: order.id, comment: repeatComment.trim() || undefined },
+      {
+        onSuccess: () => {
+          toast.success('Заказ повторён');
+          navigate('/orders');
+        },
+        onError: () => toast.error('Не удалось повторить заказ'),
       },
-      onError: () => toast.error('Не удалось повторить заказ'),
-    });
+    );
   };
 
   const handleCancelConfirm = () => setConfirmOpen(false);
@@ -165,6 +173,15 @@ export function OrderDetailPage() {
           <DialogContentText>
             Будет создан новый заказ с текущими ценами. Продолжить?
           </DialogContentText>
+          <TextField
+            label="Комментарий к заказу"
+            fullWidth
+            multiline
+            minRows={2}
+            value={repeatComment}
+            onChange={(e) => setRepeatComment(e.target.value)}
+            sx={{ mt: 2 }}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCancelConfirm}>Отмена</Button>

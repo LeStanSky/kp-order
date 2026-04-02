@@ -27,6 +27,7 @@ interface OrderEmailData {
   totalAmount: number;
   itemCount: number;
   items?: OrderEmailItem[];
+  comment?: string;
 }
 
 function renderItemsTable(items: OrderEmailItem[]): string {
@@ -74,6 +75,7 @@ export const emailService = {
           <p><strong>Клиент:</strong> ${data.customerName} (${data.customerEmail})</p>
           ${data.items?.length ? renderItemsTable(data.items) : `<p><strong>Позиций:</strong> ${data.itemCount}</p>`}
           <p><strong>Итого:</strong> ${data.totalAmount.toFixed(2)} руб.</p>
+          ${data.comment ? `<p><strong>Комментарий:</strong> ${data.comment}</p>` : ''}
         `,
       });
     } catch (error) {
@@ -106,6 +108,7 @@ export const emailService = {
           <p>Ваш заказ принят в обработку.</p>
           ${data.items?.length ? renderItemsTable(data.items) : `<p><strong>Позиций:</strong> ${data.itemCount}</p>`}
           <p><strong>Итого:</strong> ${data.totalAmount.toFixed(2)} руб.</p>
+          ${data.comment ? `<p><strong>Комментарий:</strong> ${data.comment}</p>` : ''}
         `,
       });
     } catch (error) {
