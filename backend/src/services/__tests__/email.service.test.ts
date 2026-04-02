@@ -51,6 +51,28 @@ describe('emailService', () => {
       expect(call.html).toContain('Test Client');
     });
 
+    it('should include comment in email when provided', async () => {
+      mockSendMail.mockResolvedValue({ messageId: '123' });
+
+      await emailService.sendOrderNotificationToManager({
+        ...orderData,
+        comment: 'Доставить до 15:00',
+      });
+
+      const call = mockSendMail.mock.calls[0][0];
+      expect(call.html).toContain('Комментарий');
+      expect(call.html).toContain('Доставить до 15:00');
+    });
+
+    it('should not include comment section when comment is absent', async () => {
+      mockSendMail.mockResolvedValue({ messageId: '123' });
+
+      await emailService.sendOrderNotificationToManager(orderData);
+
+      const call = mockSendMail.mock.calls[0][0];
+      expect(call.html).not.toContain('Комментарий');
+    });
+
     it('should not throw on send failure (fire-and-forget)', async () => {
       mockSendMail.mockRejectedValue(new Error('SMTP error'));
 
@@ -76,6 +98,28 @@ describe('emailService', () => {
       const call = mockSendMail.mock.calls[0][0];
       expect(call.to).toBe('client@test.com');
       expect(call.subject).toContain('ORD-20260315-001');
+    });
+
+    it('should include comment in email when provided', async () => {
+      mockSendMail.mockResolvedValue({ messageId: '456' });
+
+      await emailService.sendOrderConfirmationToClient({
+        ...orderData,
+        comment: 'Позвонить перед доставкой',
+      });
+
+      const call = mockSendMail.mock.calls[0][0];
+      expect(call.html).toContain('Комментарий');
+      expect(call.html).toContain('Позвонить перед доставкой');
+    });
+
+    it('should not include comment section when comment is absent', async () => {
+      mockSendMail.mockResolvedValue({ messageId: '456' });
+
+      await emailService.sendOrderConfirmationToClient(orderData);
+
+      const call = mockSendMail.mock.calls[0][0];
+      expect(call.html).not.toContain('Комментарий');
     });
 
     it('should not throw on send failure (fire-and-forget)', async () => {

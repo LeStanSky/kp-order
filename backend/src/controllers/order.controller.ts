@@ -32,10 +32,11 @@ export const orderController = {
   },
 
   async repeatOrder(req: Request, res: Response) {
-    const order = await orderService.repeatOrder(req.params.id as string, {
-      id: req.user!.id,
-      role: req.user!.role,
-    });
+    const order = await orderService.repeatOrder(
+      req.params.id as string,
+      { id: req.user!.id, role: req.user!.role },
+      req.body?.comment,
+    );
     res.status(201).json(order);
   },
 
