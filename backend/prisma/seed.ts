@@ -10,11 +10,11 @@ const prisma = new PrismaClient({ adapter });
 
 const SUBY_ALLOWED_CATEGORIES = [
   'Jaws',
-  'Jaws розлив',
+  'Jaws Розлив',
   'Бродилка сидры',
   'Бродилка сидры Розлив',
   'Полукультурка сидры',
-  'Полукультурка сидры розлив',
+  'Полукультурка сидры Розлив',
 ];
 
 const PRICE_GROUPS: { name: string; allowedCategories?: string[] }[] = [

@@ -5,10 +5,10 @@ ALTER TABLE "price_groups" ADD COLUMN "allowed_categories" TEXT[] DEFAULT ARRAY[
 UPDATE "price_groups"
 SET "allowed_categories" = ARRAY[
   'Jaws',
-  'Jaws розлив',
-  'Бродилка сидры',
+  'Jaws Розлив',
+  'Бродилка сид��ы',
   'Бродилка сидры Розлив',
-  'Полукультурка сидры',
-  'Полукультурка сидры розлив'
+  'Полукультурка си��ры',
+  'Полукультурка сидры Розлив'
 ]
 WHERE "name" = 'Прайс Субы';
