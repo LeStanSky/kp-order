@@ -8,16 +8,25 @@ dotenv.config();
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
-const PRICE_GROUPS = [
-  'Прайс основной',
-  'Прайс 1 уровень',
-  'Прайс 2 уровень',
-  'Прайс Спот',
-  'Прайс Субы',
-  'Прайс Градусы',
-  'Прайс Пив.com',
-  'Прайс beer.exe',
-  'Прайс ХС',
+const SUBY_ALLOWED_CATEGORIES = [
+  'Jaws',
+  'Jaws Розлив',
+  'Бродилка сидры',
+  'Бродилка сидры Розлив',
+  'Полукультурка сидры',
+  'Полукультурка сидры Розлив',
+];
+
+const PRICE_GROUPS: { name: string; allowedCategories?: string[] }[] = [
+  { name: 'Прайс основной' },
+  { name: 'Прайс 1 уровень' },
+  { name: 'Прайс 2 уровень' },
+  { name: 'Прайс Спот' },
+  { name: 'Прайс Субы', allowedCategories: SUBY_ALLOWED_CATEGORIES },
+  { name: 'Прайс Градусы' },
+  { name: 'Прайс Пив.com' },
+  { name: 'Прайс beer.exe' },
+  { name: 'Прайс ХС' },
 ];
 
 async function main() {
@@ -25,11 +34,11 @@ async function main() {
 
   // Price groups
   const priceGroupMap = new Map<string, string>();
-  for (const name of PRICE_GROUPS) {
+  for (const { name, allowedCategories } of PRICE_GROUPS) {
     const pg = await prisma.priceGroup.upsert({
       where: { name },
-      create: { name },
-      update: {},
+      create: { name, allowedCategories: allowedCategories ?? [] },
+      update: { allowedCategories: allowedCategories ?? [] },
     });
     priceGroupMap.set(name, pg.id);
   }

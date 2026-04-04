@@ -203,7 +203,7 @@ async function syncProducts(_job: Job): Promise<ERPSyncResult> {
 
   // 6. Invalidate cache
   await cacheService.delByPattern('products:*');
-  await cacheService.delByPattern('categories');
+  await cacheService.delByPattern('categories:*');
 
   const duration = Date.now() - start;
   logger.info(

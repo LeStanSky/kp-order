@@ -52,6 +52,7 @@ describe('Products Routes', () => {
       // cache miss
       (mockRedis.get as jest.Mock).mockResolvedValue(null);
       (mockRedis.set as jest.Mock).mockResolvedValue('OK');
+      (db.priceGroup.findUnique as jest.Mock).mockResolvedValue({ allowedCategories: [] });
 
       (db.product.findMany as jest.Mock).mockResolvedValue([sampleProduct]);
       (db.product.count as jest.Mock).mockResolvedValue(1);
@@ -86,6 +87,7 @@ describe('Products Routes', () => {
       const token = makeToken();
       (mockRedis.get as jest.Mock).mockResolvedValue(null);
       (mockRedis.set as jest.Mock).mockResolvedValue('OK');
+      (db.priceGroup.findUnique as jest.Mock).mockResolvedValue({ allowedCategories: [] });
       (db.product.findMany as jest.Mock).mockResolvedValue([]);
       (db.product.count as jest.Mock).mockResolvedValue(0);
 
@@ -159,6 +161,7 @@ describe('Products Routes', () => {
       const token = makeToken();
       (mockRedis.get as jest.Mock).mockResolvedValue(null);
       (mockRedis.set as jest.Mock).mockResolvedValue('OK');
+      (db.priceGroup.findUnique as jest.Mock).mockResolvedValue({ allowedCategories: [] });
       (db.product.findMany as jest.Mock).mockResolvedValue([
         { category: 'Drinks' },
         { category: 'Snacks' },
@@ -171,6 +174,26 @@ describe('Products Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual(['Drinks', 'Snacks']);
     });
+
+    it('should filter categories by allowedCategories for restricted price group', async () => {
+      const token = makeToken({ priceGroupId: 'pg-suby' });
+      (mockRedis.get as jest.Mock).mockResolvedValue(null);
+      (mockRedis.set as jest.Mock).mockResolvedValue('OK');
+      (db.priceGroup.findUnique as jest.Mock).mockResolvedValue({
+        allowedCategories: ['Jaws', 'Jaws розлив'],
+      });
+      (db.product.findMany as jest.Mock).mockResolvedValue([{ category: 'Jaws' }]);
+
+      const res = await request(app)
+        .get('/api/products/categories')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual(['Jaws']);
+      // Verify the category filter was applied
+      const where = (db.product.findMany as jest.Mock).mock.calls[0][0].where;
+      expect(where.category).toEqual({ in: ['Jaws', 'Jaws розлив'] });
+    });
   });
 
   describe('Role-based expiryDate visibility', () => {
@@ -178,6 +201,7 @@ describe('Products Routes', () => {
       const token = makeToken({ role: 'CLIENT' });
       (mockRedis.get as jest.Mock).mockResolvedValue(null);
       (mockRedis.set as jest.Mock).mockResolvedValue('OK');
+      (db.priceGroup.findUnique as jest.Mock).mockResolvedValue({ allowedCategories: [] });
       (db.product.findMany as jest.Mock).mockResolvedValue([sampleProduct]);
       (db.product.count as jest.Mock).mockResolvedValue(1);
 
@@ -192,6 +216,7 @@ describe('Products Routes', () => {
       const token = makeToken({ role: 'MANAGER' });
       (mockRedis.get as jest.Mock).mockResolvedValue(null);
       (mockRedis.set as jest.Mock).mockResolvedValue('OK');
+      (db.priceGroup.findUnique as jest.Mock).mockResolvedValue(null);
       (db.product.findMany as jest.Mock).mockResolvedValue([sampleProduct]);
       (db.product.count as jest.Mock).mockResolvedValue(1);
 
@@ -206,6 +231,7 @@ describe('Products Routes', () => {
       const token = makeToken({ role: 'ADMIN' });
       (mockRedis.get as jest.Mock).mockResolvedValue(null);
       (mockRedis.set as jest.Mock).mockResolvedValue('OK');
+      (db.priceGroup.findUnique as jest.Mock).mockResolvedValue(null);
       (db.product.findMany as jest.Mock).mockResolvedValue([sampleProduct]);
       (db.product.count as jest.Mock).mockResolvedValue(1);
 

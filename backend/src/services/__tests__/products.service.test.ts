@@ -31,6 +31,84 @@ const sampleProduct = {
 };
 
 describe('ProductsService', () => {
+  describe('getProducts', () => {
+    it('should fetch allowedCategories and pass to repository', async () => {
+      mockCache.get.mockResolvedValue(null);
+      mockCache.set.mockResolvedValue(undefined);
+      mockRepo.getAllowedCategories.mockResolvedValue(['Jaws', 'Jaws розлив']);
+      mockRepo.findAll.mockResolvedValue({
+        products: [sampleProduct] as any,
+        total: 1,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      });
+
+      const options = { page: 1, limit: 20, sortBy: 'cleanName', sortOrder: 'asc' as const };
+      await productsService.getProducts(options, 'CLIENT', 'pg-suby');
+
+      expect(mockRepo.getAllowedCategories).toHaveBeenCalledWith('pg-suby');
+      expect(mockRepo.findAll).toHaveBeenCalledWith(options, 'pg-suby', ['Jaws', 'Jaws розлив']);
+    });
+
+    it('should not fetch allowedCategories when no priceGroupId', async () => {
+      mockCache.get.mockResolvedValue(null);
+      mockCache.set.mockResolvedValue(undefined);
+      mockRepo.findAll.mockResolvedValue({
+        products: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 0,
+      });
+
+      const options = { page: 1, limit: 20, sortBy: 'cleanName', sortOrder: 'asc' as const };
+      await productsService.getProducts(options, 'ADMIN', null);
+
+      expect(mockRepo.getAllowedCategories).not.toHaveBeenCalled();
+      expect(mockRepo.findAll).toHaveBeenCalledWith(options, null, []);
+    });
+  });
+
+  describe('getCategories', () => {
+    it('should filter categories by allowedCategories when priceGroupId provided', async () => {
+      mockCache.get.mockResolvedValue(null);
+      mockCache.set.mockResolvedValue(undefined);
+      mockRepo.getAllowedCategories.mockResolvedValue(['Jaws']);
+      mockRepo.getCategories.mockResolvedValue(['Jaws']);
+
+      const result = await productsService.getCategories('pg-suby');
+
+      expect(mockRepo.getAllowedCategories).toHaveBeenCalledWith('pg-suby');
+      expect(mockRepo.getCategories).toHaveBeenCalledWith(['Jaws']);
+      expect(result).toEqual(['Jaws']);
+    });
+
+    it('should return all categories when no priceGroupId', async () => {
+      mockCache.get.mockResolvedValue(null);
+      mockCache.set.mockResolvedValue(undefined);
+      mockRepo.getCategories.mockResolvedValue(['Jaws', 'Ostrovica']);
+
+      const result = await productsService.getCategories(null);
+
+      expect(mockRepo.getAllowedCategories).not.toHaveBeenCalled();
+      expect(mockRepo.getCategories).toHaveBeenCalledWith([]);
+      expect(result).toEqual(['Jaws', 'Ostrovica']);
+    });
+
+    it('should use per-priceGroup cache key', async () => {
+      mockCache.get.mockResolvedValue(null);
+      mockCache.set.mockResolvedValue(undefined);
+      mockRepo.getAllowedCategories.mockResolvedValue([]);
+      mockRepo.getCategories.mockResolvedValue(['Jaws']);
+
+      await productsService.getCategories('pg-1');
+
+      expect(mockCache.get).toHaveBeenCalledWith('categories:pg-1');
+      expect(mockCache.set).toHaveBeenCalledWith('categories:pg-1', ['Jaws'], 300);
+    });
+  });
+
   describe('updateProduct', () => {
     it('should update description and invalidate cache', async () => {
       mockRepo.findById.mockResolvedValue(sampleProduct as any);

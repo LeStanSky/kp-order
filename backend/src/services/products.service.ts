@@ -30,7 +30,11 @@ export const productsService = {
     const cached = await cacheService.get<any>(cacheKey);
     if (cached) return cached;
 
-    const result = await productRepository.findAll(options, priceGroupId);
+    const allowedCategories = priceGroupId
+      ? await productRepository.getAllowedCategories(priceGroupId)
+      : [];
+
+    const result = await productRepository.findAll(options, priceGroupId, allowedCategories);
 
     const products = result.products.map((product: any) => {
       const base: any = {
@@ -157,12 +161,16 @@ export const productsService = {
     return updated;
   },
 
-  async getCategories() {
-    const cacheKey = 'categories';
+  async getCategories(priceGroupId?: string | null) {
+    const cacheKey = `categories:${priceGroupId ?? 'none'}`;
     const cached = await cacheService.get<string[]>(cacheKey);
     if (cached) return cached;
 
-    const categories = await productRepository.getCategories();
+    const allowedCategories = priceGroupId
+      ? await productRepository.getAllowedCategories(priceGroupId)
+      : [];
+
+    const categories = await productRepository.getCategories(allowedCategories);
     await cacheService.set(cacheKey, categories, CATEGORIES_CACHE_TTL);
     return categories;
   },
