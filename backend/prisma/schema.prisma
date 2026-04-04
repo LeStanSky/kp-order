@@ -63,11 +63,12 @@ model RefreshToken {
 }
 
 model PriceGroup {
-  id         String  @id @default(uuid())
-  name       String  @unique
-  externalId String? @unique @map("external_id")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                String   @id @default(uuid())
+  name              String   @unique
+  externalId        String?  @unique @map("external_id")
+  allowedCategories String[] @default([]) @map("allowed_categories")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   users  User[]
   prices Price[]

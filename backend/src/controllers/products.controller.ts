@@ -20,8 +20,8 @@ export const productsController = {
     res.json(result);
   },
 
-  async getCategories(_req: Request, res: Response) {
-    const categories = await productsService.getCategories();
+  async getCategories(req: Request, res: Response) {
+    const categories = await productsService.getCategories(req.user!.priceGroupId);
     res.json({ data: categories });
   },
 

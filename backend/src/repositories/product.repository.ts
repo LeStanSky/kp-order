@@ -3,7 +3,11 @@ import { Prisma } from '../generated/prisma/client';
 import { GetProductsOptions } from '../types/erp.types';
 
 export const productRepository = {
-  async findAll(options: GetProductsOptions, priceGroupId?: string | null) {
+  async findAll(
+    options: GetProductsOptions,
+    priceGroupId?: string | null,
+    allowedCategories?: string[],
+  ) {
     const { page, limit, search, category, sortBy, sortOrder, expired } = options;
     const skip = (page - 1) * limit;
 
@@ -14,6 +18,12 @@ export const productRepository = {
       ? { expiryDate: { lt: today } }
       : { OR: [{ expiryDate: null }, { expiryDate: { gte: today } }] };
 
+    const categoryFilter = category
+      ? { category }
+      : allowedCategories && allowedCategories.length > 0
+        ? { category: { in: allowedCategories } }
+        : {};
+
     const where: Prisma.ProductWhereInput = {
       isActive: true,
       stocks: { some: { quantity: { gt: 0 } } },
@@ -21,7 +31,7 @@ export const productRepository = {
       ...(search && {
         cleanName: { contains: search, mode: 'insensitive' as const },
       }),
-      ...(category && { category }),
+      ...categoryFilter,
     };
 
     const include: Prisma.ProductInclude = {
@@ -132,7 +142,7 @@ export const productRepository = {
     });
   },
 
-  async getCategories() {
+  async getCategories(allowedCategories?: string[]) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -142,6 +152,8 @@ export const productRepository = {
         category: { not: null },
         stocks: { some: { quantity: { gt: 0 } } },
         OR: [{ expiryDate: null }, { expiryDate: { gte: today } }],
+        ...(allowedCategories &&
+          allowedCategories.length > 0 && { category: { in: allowedCategories } }),
       },
       select: { category: true },
       distinct: ['category'],
@@ -151,6 +163,14 @@ export const productRepository = {
     return categories
       .map((c: { category: string | null }) => c.category)
       .filter(Boolean) as string[];
+  },
+
+  async getAllowedCategories(priceGroupId: string): Promise<string[]> {
+    const pg = await prisma.priceGroup.findUnique({
+      where: { id: priceGroupId },
+      select: { allowedCategories: true },
+    });
+    return pg?.allowedCategories ?? [];
   },
 
   async count(where?: Prisma.ProductWhereInput) {

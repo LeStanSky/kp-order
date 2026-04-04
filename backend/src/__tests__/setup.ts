@@ -52,6 +52,7 @@ jest.mock('../config/database', () => {
       create: jest.fn(),
     },
     priceGroup: {
+      findUnique: jest.fn(),
       findMany: jest.fn(),
     },
     $transaction: jest.fn(),
