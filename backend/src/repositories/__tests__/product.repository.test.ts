@@ -131,6 +131,48 @@ describe('ProductRepository', () => {
       );
     });
 
+    it('should filter by allowedCategories when provided', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll(
+        { page: 1, limit: 20, sortBy: 'cleanName', sortOrder: 'asc' },
+        'pg-1',
+        ['Jaws', 'Jaws розлив'],
+      );
+
+      const where = (db.product.findMany as jest.Mock).mock.calls[0][0].where;
+      expect(where.category).toEqual({ in: ['Jaws', 'Jaws розлив'] });
+    });
+
+    it('should not filter categories when allowedCategories is empty', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll(
+        { page: 1, limit: 20, sortBy: 'cleanName', sortOrder: 'asc' },
+        'pg-1',
+        [],
+      );
+
+      const where = (db.product.findMany as jest.Mock).mock.calls[0][0].where;
+      expect(where.category).toBeUndefined();
+    });
+
+    it('should prefer explicit category over allowedCategories', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([]);
+      (db.product.count as jest.Mock).mockResolvedValue(0);
+
+      await productRepository.findAll(
+        { page: 1, limit: 20, category: 'Jaws', sortBy: 'cleanName', sortOrder: 'asc' },
+        'pg-1',
+        ['Jaws', 'Jaws розлив'],
+      );
+
+      const where = (db.product.findMany as jest.Mock).mock.calls[0][0].where;
+      expect(where.category).toBe('Jaws');
+    });
+
     it('should calculate pagination correctly', async () => {
       (db.product.findMany as jest.Mock).mockResolvedValue([]);
       (db.product.count as jest.Mock).mockResolvedValue(50);
@@ -176,6 +218,51 @@ describe('ProductRepository', () => {
         }),
       );
       expect(result).toEqual(['Jaws', 'Ostrovica']);
+    });
+
+    it('should filter by allowedCategories when provided', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([{ category: 'Jaws' }]);
+
+      await productRepository.getCategories(['Jaws', 'Jaws розлив']);
+
+      const where = (db.product.findMany as jest.Mock).mock.calls[0][0].where;
+      expect(where.category).toEqual({ in: ['Jaws', 'Jaws розлив'] });
+    });
+
+    it('should not filter categories when allowedCategories is empty', async () => {
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { category: 'Jaws' },
+        { category: 'Ostrovica' },
+      ]);
+
+      await productRepository.getCategories([]);
+
+      const where = (db.product.findMany as jest.Mock).mock.calls[0][0].where;
+      expect(where.category).toEqual({ not: null });
+    });
+  });
+
+  describe('getAllowedCategories', () => {
+    it('should return allowedCategories for a price group', async () => {
+      (db.priceGroup.findUnique as jest.Mock).mockResolvedValue({
+        allowedCategories: ['Jaws', 'Jaws розлив'],
+      });
+
+      const result = await productRepository.getAllowedCategories('pg-1');
+
+      expect(db.priceGroup.findUnique).toHaveBeenCalledWith({
+        where: { id: 'pg-1' },
+        select: { allowedCategories: true },
+      });
+      expect(result).toEqual(['Jaws', 'Jaws розлив']);
+    });
+
+    it('should return empty array if price group not found', async () => {
+      (db.priceGroup.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const result = await productRepository.getAllowedCategories('non-existent');
+
+      expect(result).toEqual([]);
     });
   });
 
