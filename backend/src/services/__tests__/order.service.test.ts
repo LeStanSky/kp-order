@@ -109,7 +109,7 @@ describe('orderService', () => {
       });
     });
 
-    it('should apply KEG price multiplier for дкл products', async () => {
+    it('should apply KEG price multiplier when unit is дкл', async () => {
       const kegInput = {
         items: [{ productId: 'keg-1', quantity: 1 }],
       };
@@ -136,12 +136,39 @@ describe('orderService', () => {
       );
     });
 
+    it('should apply KEG price multiplier when name contains PET KEG and unit is null', async () => {
+      const kegInput = {
+        items: [{ productId: 'keg-3', quantity: 1 }],
+      };
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'keg-3', cleanName: 'Jaws APA алк.5,5% об. PET KEG 20л', unit: null },
+      ]);
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      (db.price.findMany as jest.Mock).mockResolvedValue([
+        { productId: 'keg-3', value: 4000, currency: 'RUB' },
+      ]);
+      mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-008');
+      mockOrderRepo.create.mockResolvedValue({ ...mockOrder, id: 'order-keg3' } as any);
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
+      mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+
+      await orderService.createOrder('user-1', kegInput);
+
+      // 4000 × 2 (20л / 10) = 8000
+      expect(mockOrderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalAmount: 8000,
+          items: [{ productId: 'keg-3', quantity: 1, price: 8000, currency: 'RUB' }],
+        }),
+      );
+    });
+
     it('should apply KEG price multiplier for 30л keg', async () => {
       const kegInput = {
         items: [{ productId: 'keg-2', quantity: 2 }],
       };
       (db.product.findMany as jest.Mock).mockResolvedValue([
-        { id: 'keg-2', cleanName: 'Lager 30 л.', unit: 'дкл' },
+        { id: 'keg-2', cleanName: 'Бродилка Сидр PET KEG 30л', unit: null },
       ]);
       mockUserRepo.findById.mockResolvedValue(mockUser as any);
       (db.price.findMany as jest.Mock).mockResolvedValue([
@@ -154,7 +181,7 @@ describe('orderService', () => {
 
       await orderService.createOrder('user-1', kegInput);
 
-      // 3000 per дкл × 3 (30л / 10) = 9000 per keg, × 2 qty = 18000
+      // 3000 × 3 (30л / 10) = 9000 per keg, × 2 qty = 18000
       expect(mockOrderRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           totalAmount: 18000,
@@ -163,7 +190,7 @@ describe('orderService', () => {
       );
     });
 
-    it('should not apply KEG multiplier for non-дкл products', async () => {
+    it('should not apply KEG multiplier for non-KEG products', async () => {
       mockUserRepo.findById.mockResolvedValue(mockUser as any);
       (db.price.findMany as jest.Mock).mockResolvedValue([
         { productId: 'prod-1', value: 2500, currency: 'RUB' },

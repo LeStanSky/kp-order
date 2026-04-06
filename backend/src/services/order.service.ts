@@ -11,8 +11,12 @@ interface RequestUser {
   role: 'CLIENT' | 'MANAGER' | 'ADMIN';
 }
 
+function isKeg(name: string, unit: string | null): boolean {
+  return unit === 'дкл' || /PET\s+KEG/i.test(name);
+}
+
 function resolveKegPrice(price: number, name: string, unit: string | null): number {
-  if (unit !== 'дкл') return price;
+  if (!isKeg(name, unit)) return price;
   const match = name.match(/(?<!\d)(10|20|30)\s*л\.?/i);
   if (!match) return price;
   const factor = parseInt(match[1], 10) / 10;
