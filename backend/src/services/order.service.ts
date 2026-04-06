@@ -11,6 +11,14 @@ interface RequestUser {
   role: 'CLIENT' | 'MANAGER' | 'ADMIN';
 }
 
+function resolveKegPrice(price: number, name: string, unit: string | null): number {
+  if (unit !== 'дкл') return price;
+  const match = name.match(/(?<!\d)(10|20|30)\s*л\.?/i);
+  if (!match) return price;
+  const factor = parseInt(match[1], 10) / 10;
+  return Math.round(price * factor * 100) / 100;
+}
+
 export const orderService = {
   async createOrder(userId: string, input: CreateOrderInput) {
     const user = await userRepository.findById(userId);
@@ -25,13 +33,13 @@ export const orderService = {
       }),
       prisma.product.findMany({
         where: { id: { in: productIds } },
-        select: { id: true, cleanName: true },
+        select: { id: true, cleanName: true, unit: true },
       }),
     ]);
 
     const priceMap = new Map(prices.map((p: any) => [p.productId, p]));
     const productMap = new Map(
-      products.map((p: { id: string; cleanName: string }) => [p.id, p.cleanName]),
+      products.map((p: { id: string; cleanName: string; unit: string | null }) => [p.id, p]),
     );
 
     const missingPrices = productIds.filter((id) => !priceMap.has(id));
@@ -41,10 +49,11 @@ export const orderService = {
 
     const items = input.items.map((item) => {
       const price = priceMap.get(item.productId)!;
+      const product = productMap.get(item.productId);
       return {
         productId: item.productId,
         quantity: item.quantity,
-        price: price.value,
+        price: resolveKegPrice(price.value, product?.cleanName ?? '', product?.unit ?? null),
         currency: price.currency,
       };
     });
@@ -61,7 +70,7 @@ export const orderService = {
     });
 
     const emailItems = items.map((item) => ({
-      name: productMap.get(item.productId) ?? '—',
+      name: productMap.get(item.productId)?.cleanName ?? '—',
       quantity: item.quantity,
       price: item.price,
       total: item.price * item.quantity,

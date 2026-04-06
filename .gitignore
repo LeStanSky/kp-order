@@ -37,3 +37,6 @@ backend/src/generated/
 # Docker volumes
 pgdata/
 redisdata/
+
+# Internal docs (deploy guides, specs, API reference)
+docs_internal/
