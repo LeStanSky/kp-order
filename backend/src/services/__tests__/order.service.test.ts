@@ -82,7 +82,9 @@ describe('orderService', () => {
     };
 
     beforeEach(() => {
-      (db.product.findMany as jest.Mock).mockResolvedValue([{ id: 'prod-1', cleanName: 'Beer' }]);
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'prod-1', cleanName: 'Beer', unit: 'шт' },
+      ]);
     });
 
     it('should create an order successfully', async () => {
@@ -105,6 +107,106 @@ describe('orderService', () => {
         totalAmount: 5000,
         items: [{ productId: 'prod-1', quantity: 2, price: 2500, currency: 'RUB' }],
       });
+    });
+
+    it('should apply KEG price multiplier when unit is дкл', async () => {
+      const kegInput = {
+        items: [{ productId: 'keg-1', quantity: 1 }],
+      };
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'keg-1', cleanName: 'APA алк.5% 20 л.', unit: 'дкл' },
+      ]);
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      (db.price.findMany as jest.Mock).mockResolvedValue([
+        { productId: 'keg-1', value: 4000, currency: 'RUB' },
+      ]);
+      mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-005');
+      mockOrderRepo.create.mockResolvedValue({ ...mockOrder, id: 'order-keg' } as any);
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
+      mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+
+      await orderService.createOrder('user-1', kegInput);
+
+      // 4000 per дкл × 2 (20л / 10) = 8000 per keg
+      expect(mockOrderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalAmount: 8000,
+          items: [{ productId: 'keg-1', quantity: 1, price: 8000, currency: 'RUB' }],
+        }),
+      );
+    });
+
+    it('should apply KEG price multiplier when name contains PET KEG and unit is null', async () => {
+      const kegInput = {
+        items: [{ productId: 'keg-3', quantity: 1 }],
+      };
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'keg-3', cleanName: 'Jaws APA алк.5,5% об. PET KEG 20л', unit: null },
+      ]);
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      (db.price.findMany as jest.Mock).mockResolvedValue([
+        { productId: 'keg-3', value: 4000, currency: 'RUB' },
+      ]);
+      mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-008');
+      mockOrderRepo.create.mockResolvedValue({ ...mockOrder, id: 'order-keg3' } as any);
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
+      mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+
+      await orderService.createOrder('user-1', kegInput);
+
+      // 4000 × 2 (20л / 10) = 8000
+      expect(mockOrderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalAmount: 8000,
+          items: [{ productId: 'keg-3', quantity: 1, price: 8000, currency: 'RUB' }],
+        }),
+      );
+    });
+
+    it('should apply KEG price multiplier for 30л keg', async () => {
+      const kegInput = {
+        items: [{ productId: 'keg-2', quantity: 2 }],
+      };
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'keg-2', cleanName: 'Бродилка Сидр PET KEG 30л', unit: null },
+      ]);
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      (db.price.findMany as jest.Mock).mockResolvedValue([
+        { productId: 'keg-2', value: 3000, currency: 'RUB' },
+      ]);
+      mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-006');
+      mockOrderRepo.create.mockResolvedValue({ ...mockOrder, id: 'order-keg2' } as any);
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
+      mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+
+      await orderService.createOrder('user-1', kegInput);
+
+      // 3000 × 3 (30л / 10) = 9000 per keg, × 2 qty = 18000
+      expect(mockOrderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalAmount: 18000,
+          items: [{ productId: 'keg-2', quantity: 2, price: 9000, currency: 'RUB' }],
+        }),
+      );
+    });
+
+    it('should not apply KEG multiplier for non-KEG products', async () => {
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      (db.price.findMany as jest.Mock).mockResolvedValue([
+        { productId: 'prod-1', value: 2500, currency: 'RUB' },
+      ]);
+      mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-007');
+      mockOrderRepo.create.mockResolvedValue(mockOrder as any);
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
+      mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+
+      await orderService.createOrder('user-1', createInput);
+
+      expect(mockOrderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          items: [{ productId: 'prod-1', quantity: 2, price: 2500, currency: 'RUB' }],
+        }),
+      );
     });
 
     it('should throw NotFoundError if user not found', async () => {
@@ -182,6 +284,10 @@ describe('orderService', () => {
         ],
       };
       mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'prod-1', cleanName: 'Beer', unit: 'шт' },
+        { id: 'prod-2', cleanName: 'Wine', unit: 'шт' },
+      ]);
       (db.price.findMany as jest.Mock).mockResolvedValue([
         { productId: 'prod-1', value: 100, currency: 'RUB' },
         { productId: 'prod-2', value: 200, currency: 'RUB' },
@@ -442,7 +548,9 @@ describe('orderService', () => {
 
   describe('repeatOrder', () => {
     beforeEach(() => {
-      (db.product.findMany as jest.Mock).mockResolvedValue([{ id: 'prod-1', cleanName: 'Beer' }]);
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'prod-1', cleanName: 'Beer', unit: 'шт' },
+      ]);
     });
 
     it('should create a new order with items from original order', async () => {
