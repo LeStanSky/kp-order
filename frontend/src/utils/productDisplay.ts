@@ -5,19 +5,33 @@ export function formatPrice(value: number): string {
   return (Math.round(value * 100) / 100).toFixed(2);
 }
 
-/** Определяет, является ли товар KEG-позицией: unit='дкл' или "PET KEG" в названии. */
+const PIECE_MARKER = /(?:^|\s)ШТ(?=\s|$|[.,])/;
+const PIECE_MARKER_STRIP = /(^|\s)ШТ(?=\s|$|[.,])/g;
+
+/** KEG-позиция в штуках: маркер "ШТ" в названии. Остаток и цена не пересчитываются. */
+export function isKegSoldByPiece(name: string): boolean {
+  return PIECE_MARKER.test(name);
+}
+
+function hasKegName(name: string): boolean {
+  return /PET\s+KEG/i.test(name);
+}
+
+/** Определяет, является ли товар KEG-позицией в декалитрах (требует конвертации). */
 export function isKeg(name: string, unit: string | undefined): boolean {
-  return unit === 'дкл' || /PET\s+KEG/i.test(name);
+  if (isKegSoldByPiece(name)) return false;
+  return unit === 'дкл' || hasKegName(name);
 }
 
 /**
- * Для KEG-товаров убирает "PET KEG" и "розлив" из отображаемого названия.
+ * Для KEG-товаров убирает "PET KEG", "розлив" и маркер "ШТ" из отображаемого названия.
  */
 export function resolveDisplayName(name: string, unit: string | undefined): string {
-  if (!isKeg(name, unit)) return name;
+  if (!hasKegName(name) && unit !== 'дкл' && !isKegSoldByPiece(name)) return name;
   return name
     .replace(/\bPET\s+KEG\b\s*/gi, '')
     .replace(/розлив\s*/gi, '')
+    .replace(PIECE_MARKER_STRIP, '$1')
     .replace(/\s+/g, ' ')
     .trim();
 }

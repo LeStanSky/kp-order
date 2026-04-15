@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -18,6 +18,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import UploadIcon from '@mui/icons-material/Upload';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import type { Product } from '@/types/product.types';
@@ -25,6 +27,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { productsApi } from '@/api/products.api';
 import {
+  isKeg,
   resolveDisplayName,
   resolveStock,
   resolvePrice,
@@ -38,13 +41,24 @@ interface ProductDetailModalProps {
 
 export function ProductDetailModal({ product, onClose }: ProductDetailModalProps) {
   const { hasRole, user } = useAuthStore();
-  const { items: cartItems, addItem } = useCartStore();
+  const { items: cartItems, addItem, updateQuantity, removeItem } = useCartStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [qty, setQty] = useState(0);
+  const currentCartItem = product ? cartItems.find((i) => i.productId === product.id) : undefined;
+  const cartQty = currentCartItem?.quantity ?? 0;
+  const [qty, setQty] = useState(cartQty);
+  const [trackedCartQty, setTrackedCartQty] = useState(cartQty);
   const [prevProductId, setPrevProductId] = useState<string | null>(null);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [descriptionDraft, setDescriptionDraft] = useState('');
   if (product && product.id !== prevProductId) {
     setPrevProductId(product.id);
-    setQty(0);
+    setQty(cartQty);
+    setTrackedCartQty(cartQty);
+    setIsEditingDescription(false);
+    setDescriptionDraft('');
+  } else if (cartQty !== trackedCartQty) {
+    setTrackedCartQty(cartQty);
+    setQty(cartQty);
   }
   const queryClient = useQueryClient();
 
@@ -66,32 +80,67 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
     onError: () => toast.error('Ошибка удаления фото'),
   });
 
-  if (!product) return null;
+  const descriptionMutation = useMutation({
+    mutationFn: (description: string | null) =>
+      productsApi.updateProduct(product?.id ?? '', { description }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setIsEditingDescription(false);
+      toast.success('Описание сохранено');
+    },
+    onError: () => toast.error('Ошибка сохранения описания'),
+  });
 
   const isClient = hasRole('CLIENT');
   const canOrder = isClient && user?.canOrder !== false;
   const isAdmin = hasRole('ADMIN');
 
-  const displayName = resolveDisplayName(product.name, product.unit);
-  const displayStock = resolveStock(product.name, product.stock, product.unit);
-  const displayPrice = resolvePrice(product.prices, product.name, product.unit);
+  const displayName = product ? resolveDisplayName(product.name, product.unit) : '';
+  const displayStock = product
+    ? resolveStock(product.name, product.stock, product.unit)
+    : { value: 0, unit: 'шт' };
+  const displayPrice = product ? resolvePrice(product.prices, product.name, product.unit) : null;
   const outOfStock = displayStock.value === 0;
-  const cartItem = cartItems.find((i) => i.productId === product.id);
-  const availableQty = Math.max(0, displayStock.value - (cartItem?.quantity ?? 0));
+  const cartItem = currentCartItem;
 
-  const handleAddToCart = () => {
-    const clampedQty = Math.min(qty, availableQty);
-    if (clampedQty < 1) return;
-    addItem({
-      productId: product.id,
-      name: displayName,
-      price: displayPrice?.value ?? 0,
-      currency: displayPrice?.currency ?? 'RUB',
-      quantity: clampedQty,
-    });
-    toast.success('Добавлено в корзину');
-    onClose();
-  };
+  useEffect(() => {
+    if (!product || !canOrder) return;
+    if (qty === cartQty) return;
+    const handle = setTimeout(() => {
+      const target = Math.min(Math.max(0, qty), displayStock.value);
+      if (target === cartQty) return;
+      if (target === 0) {
+        if (cartItem) removeItem(product.id);
+      } else if (cartItem) {
+        updateQuantity(product.id, target);
+      } else {
+        addItem({
+          productId: product.id,
+          name: displayName,
+          price: displayPrice?.value ?? 0,
+          currency: displayPrice?.currency ?? 'RUB',
+          quantity: target,
+          isKeg: isKeg(product.name, product.unit),
+        });
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [
+    qty,
+    cartQty,
+    product,
+    canOrder,
+    cartItem,
+    displayName,
+    displayPrice?.value,
+    displayPrice?.currency,
+    displayStock.value,
+    addItem,
+    updateQuantity,
+    removeItem,
+  ]);
+
+  if (!product) return null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -186,10 +235,62 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
 
           {/* Правая колонка: данные */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            {product.description && (
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                {product.description}
-              </Typography>
+            {isAdmin && isEditingDescription ? (
+              <Stack spacing={1} sx={{ mb: 2 }}>
+                <TextField
+                  multiline
+                  minRows={3}
+                  fullWidth
+                  size="small"
+                  value={descriptionDraft}
+                  onChange={(e) => setDescriptionDraft(e.target.value)}
+                  placeholder="Описание товара"
+                  autoFocus
+                />
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={() => descriptionMutation.mutate(descriptionDraft.trim() || null)}
+                    loading={descriptionMutation.isPending}
+                  >
+                    Сохранить
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setIsEditingDescription(false);
+                      setDescriptionDraft(product.description ?? '');
+                    }}
+                    disabled={descriptionMutation.isPending}
+                  >
+                    Отмена
+                  </Button>
+                </Stack>
+              </Stack>
+            ) : (
+              <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ flex: 1, whiteSpace: 'pre-wrap' }}>
+                  {product.description || (
+                    <Typography component="span" variant="body2" color="text.secondary">
+                      {isAdmin ? 'Нет описания' : ''}
+                    </Typography>
+                  )}
+                </Typography>
+                {isAdmin && (
+                  <IconButton
+                    size="small"
+                    aria-label="Редактировать описание"
+                    onClick={() => {
+                      setDescriptionDraft(product.description ?? '');
+                      setIsEditingDescription(true);
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Stack>
             )}
 
             {hasCharacteristics && (
@@ -231,30 +332,25 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
 
             {canOrder && !outOfStock && (
               <Stack direction="row" spacing={1} alignItems="center">
+                <Typography variant="body2" color="text.secondary">
+                  В корзине:
+                </Typography>
                 <TextField
                   type="number"
                   size="small"
                   value={qty}
                   onChange={(e) =>
-                    setQty(Math.min(Math.max(0, Number(e.target.value)), availableQty))
+                    setQty(Math.min(Math.max(0, Number(e.target.value)), displayStock.value))
                   }
-                  disabled={availableQty === 0}
                   slotProps={{
                     htmlInput: {
                       min: 0,
-                      max: availableQty,
+                      max: displayStock.value,
                       style: { textAlign: 'center', width: 56 },
                     },
                   }}
                   variant="outlined"
                 />
-                <Button
-                  variant="contained"
-                  onClick={handleAddToCart}
-                  disabled={qty < 1 || availableQty === 0}
-                >
-                  В корзину
-                </Button>
               </Stack>
             )}
           </Box>

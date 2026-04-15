@@ -134,7 +134,6 @@ export function ProductsPage() {
                   {canOrder && (
                     <>
                       <TableCell align="center">Кол-во</TableCell>
-                      <TableCell align="center" />
                       <TableCell align="center">В корзине</TableCell>
                     </>
                   )}
@@ -151,7 +150,7 @@ export function ProductsPage() {
                         onClick={() => toggleCategory(catName)}
                       >
                         <TableCell
-                          colSpan={canOrder ? 7 : 4}
+                          colSpan={canOrder ? 6 : 4}
                           sx={{
                             py: 0.5,
                             fontWeight: 700,

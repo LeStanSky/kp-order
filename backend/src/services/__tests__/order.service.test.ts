@@ -209,6 +209,54 @@ describe('orderService', () => {
       );
     });
 
+    it('should NOT apply KEG multiplier when name contains ШТ marker (unit=дкл)', async () => {
+      const kegInput = { items: [{ productId: 'keg-sht', quantity: 2 }] };
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'keg-sht', cleanName: 'Jaws APA алк. 5,5% об. 20л ШТ', unit: 'дкл' },
+      ]);
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      (db.price.findMany as jest.Mock).mockResolvedValue([
+        { productId: 'keg-sht', value: 1800, currency: 'RUB' },
+      ]);
+      mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-009');
+      mockOrderRepo.create.mockResolvedValue(mockOrder as any);
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
+      mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+
+      await orderService.createOrder('user-1', kegInput);
+
+      expect(mockOrderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalAmount: 3600,
+          items: [{ productId: 'keg-sht', quantity: 2, price: 1800, currency: 'RUB' }],
+        }),
+      );
+    });
+
+    it('should NOT apply KEG multiplier for PET KEG product marked ШТ', async () => {
+      const kegInput = { items: [{ productId: 'keg-sht2', quantity: 1 }] };
+      (db.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'keg-sht2', cleanName: 'Jaws APA PET KEG 20 л. ШТ', unit: 'шт' },
+      ]);
+      mockUserRepo.findById.mockResolvedValue(mockUser as any);
+      (db.price.findMany as jest.Mock).mockResolvedValue([
+        { productId: 'keg-sht2', value: 2000, currency: 'RUB' },
+      ]);
+      mockGenerateOrderNumber.mockResolvedValue('ORD-20260315-010');
+      mockOrderRepo.create.mockResolvedValue(mockOrder as any);
+      mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
+      mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+
+      await orderService.createOrder('user-1', kegInput);
+
+      expect(mockOrderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalAmount: 2000,
+          items: [{ productId: 'keg-sht2', quantity: 1, price: 2000, currency: 'RUB' }],
+        }),
+      );
+    });
+
     it('should throw NotFoundError if user not found', async () => {
       mockUserRepo.findById.mockResolvedValue(null);
 
