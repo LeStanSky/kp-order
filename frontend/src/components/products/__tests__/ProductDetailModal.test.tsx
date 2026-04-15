@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils';
 import { ProductDetailModal } from '../ProductDetailModal';
 import { useAuthStore } from '@/store/authStore';
+import { useCartStore } from '@/store/cartStore';
+import { productsApi } from '@/api/products.api';
 import type { User } from '@/types/user.types';
 import type { Product } from '@/types/product.types';
 
@@ -14,6 +16,7 @@ vi.mock('@/api/products.api', () => ({
     getProduct: vi.fn(),
     uploadImage: vi.fn().mockResolvedValue({}),
     deleteImage: vi.fn().mockResolvedValue(undefined),
+    updateProduct: vi.fn().mockResolvedValue({}),
   },
 }));
 
@@ -41,6 +44,7 @@ function renderModal(product: Product | null) {
 
 beforeEach(() => {
   useAuthStore.getState().clearAuth();
+  useCartStore.getState().clearCart();
   onClose.mockClear();
 });
 
@@ -162,5 +166,156 @@ describe('ProductDetailModal — роли', () => {
     useAuthStore.getState().setAuth(clientUser, tokens);
     renderModal(makeProduct());
     expect(screen.queryByRole('button', { name: /загрузить фото/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('ProductDetailModal — auto-add to cart (debounced)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    useAuthStore.getState().setAuth(clientUser, tokens);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('добавляет товар в корзину после debounce при вводе количества', () => {
+    renderModal(makeProduct({ stock: 10 }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '3' } });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    const items = useCartStore.getState().items;
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ productId: 'p1', quantity: 3 });
+  });
+
+  it('обновляет количество существующей позиции в корзине', () => {
+    useCartStore.getState().addItem({
+      productId: 'p1',
+      name: 'Тестовый товар',
+      price: 500,
+      currency: 'RUB',
+      quantity: 2,
+    });
+    renderModal(makeProduct({ stock: 10 }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '7' } });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    const items = useCartStore.getState().items;
+    expect(items).toHaveLength(1);
+    expect(items[0].quantity).toBe(7);
+  });
+
+  it('удаляет позицию из корзины при вводе 0', () => {
+    useCartStore.getState().addItem({
+      productId: 'p1',
+      name: 'Тестовый товар',
+      price: 500,
+      currency: 'RUB',
+      quantity: 3,
+    });
+    renderModal(makeProduct({ stock: 10 }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '0' } });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(useCartStore.getState().items).toHaveLength(0);
+  });
+
+  it('инициализирует input текущим количеством в корзине', () => {
+    useCartStore.getState().addItem({
+      productId: 'p1',
+      name: 'Тестовый товар',
+      price: 500,
+      currency: 'RUB',
+      quantity: 4,
+    });
+    renderModal(makeProduct({ stock: 10 }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    expect(input.value).toBe('4');
+  });
+
+  it('ограничивает количество остатком', () => {
+    renderModal(makeProduct({ stock: 5 }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '999' } });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(useCartStore.getState().items[0].quantity).toBe(5);
+  });
+});
+
+describe('ProductDetailModal — editable description (ADMIN)', () => {
+  beforeEach(() => {
+    useAuthStore.getState().setAuth(adminUser, tokens);
+    vi.mocked(productsApi.updateProduct).mockClear();
+  });
+
+  it('ADMIN: показывает кнопку редактирования описания', () => {
+    renderModal(makeProduct({ description: 'Старое описание' }));
+    expect(screen.getByLabelText('Редактировать описание')).toBeInTheDocument();
+  });
+
+  it('CLIENT: не показывает кнопку редактирования описания', () => {
+    useAuthStore.getState().setAuth(clientUser, tokens);
+    renderModal(makeProduct({ description: 'Описание' }));
+    expect(screen.queryByLabelText('Редактировать описание')).not.toBeInTheDocument();
+  });
+
+  it('открывает TextField и показывает кнопки Сохранить/Отмена', async () => {
+    renderModal(makeProduct({ description: 'Старое описание' }));
+    await userEvent.click(screen.getByLabelText('Редактировать описание'));
+    expect(screen.getByRole('button', { name: /сохранить/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /отмена/i })).toBeInTheDocument();
+  });
+
+  it('сохраняет изменённое описание через API', async () => {
+    vi.mocked(productsApi.updateProduct).mockResolvedValue({
+      ...makeProduct({ description: 'Новое описание' }),
+    });
+    renderModal(makeProduct({ description: 'Старое описание' }));
+    await userEvent.click(screen.getByLabelText('Редактировать описание'));
+    const textarea = screen.getByPlaceholderText('Описание товара') as HTMLTextAreaElement;
+    await userEvent.clear(textarea);
+    await userEvent.type(textarea, 'Новое описание');
+    await userEvent.click(screen.getByRole('button', { name: /сохранить/i }));
+    await waitFor(() => {
+      expect(productsApi.updateProduct).toHaveBeenCalledWith('p1', {
+        description: 'Новое описание',
+      });
+    });
+  });
+
+  it('передаёт null при сохранении пустого описания', async () => {
+    vi.mocked(productsApi.updateProduct).mockResolvedValue(makeProduct());
+    renderModal(makeProduct({ description: 'Удаляемое описание' }));
+    await userEvent.click(screen.getByLabelText('Редактировать описание'));
+    const textarea = screen.getByPlaceholderText('Описание товара') as HTMLTextAreaElement;
+    await userEvent.clear(textarea);
+    await userEvent.click(screen.getByRole('button', { name: /сохранить/i }));
+    await waitFor(() => {
+      expect(productsApi.updateProduct).toHaveBeenCalledWith('p1', { description: null });
+    });
+  });
+
+  it('Отмена возвращает прежнее описание без вызова API', async () => {
+    renderModal(makeProduct({ description: 'Не изменять' }));
+    await userEvent.click(screen.getByLabelText('Редактировать описание'));
+    const textarea = screen.getByPlaceholderText('Описание товара') as HTMLTextAreaElement;
+    await userEvent.clear(textarea);
+    await userEvent.type(textarea, 'Черновик');
+    await userEvent.click(screen.getByRole('button', { name: /отмена/i }));
+    expect(productsApi.updateProduct).not.toHaveBeenCalled();
+    expect(screen.getByText('Не изменять')).toBeInTheDocument();
+  });
+
+  it('ADMIN без описания: показывает плейсхолдер "Нет описания"', () => {
+    renderModal(makeProduct());
+    expect(screen.getByText('Нет описания')).toBeInTheDocument();
   });
 });

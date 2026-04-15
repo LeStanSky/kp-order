@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { renderWithProviders } from '@/test/utils';
 import { ProductRow } from '../ProductRow';
 import { useAuthStore } from '@/store/authStore';
+import { useCartStore } from '@/store/cartStore';
 import type { User } from '@/types/user.types';
 import type { Product } from '@/types/product.types';
 
@@ -33,6 +34,7 @@ function renderRow(product: Product) {
 
 beforeEach(() => {
   useAuthStore.getState().clearAuth();
+  useCartStore.getState().clearCart();
 });
 
 describe('ProductRow — expiry badge', () => {
@@ -265,5 +267,83 @@ describe('ProductRow — KEG ШТ (маркер "ШТ" в названии)', ()
     renderRow(makeProduct({ name: 'Пиво штучное', stock: 5, unit: 'шт' }));
     expect(screen.getByText('Пиво штучное')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
+  });
+});
+
+describe('ProductRow — auto-add to cart (debounced)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    useAuthStore.getState().setAuth(clientUser, tokens);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('добавляет позицию в корзину после debounce', () => {
+    renderRow(makeProduct({ stock: 10 }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '4' } });
+    act(() => {
+      vi.runAllTimers();
+    });
+    const items = useCartStore.getState().items;
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ productId: 'p1', quantity: 4 });
+  });
+
+  it('обновляет количество при повторном вводе', () => {
+    useCartStore.getState().addItem({
+      productId: 'p1',
+      name: 'Тестовый товар',
+      price: 500,
+      currency: 'RUB',
+      quantity: 2,
+    });
+    renderRow(makeProduct({ stock: 10 }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '6' } });
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(useCartStore.getState().items[0].quantity).toBe(6);
+  });
+
+  it('удаляет позицию при вводе 0', () => {
+    useCartStore.getState().addItem({
+      productId: 'p1',
+      name: 'Тестовый товар',
+      price: 500,
+      currency: 'RUB',
+      quantity: 3,
+    });
+    renderRow(makeProduct({ stock: 10 }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '0' } });
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(useCartStore.getState().items).toHaveLength(0);
+  });
+
+  it('показывает чип с количеством, когда позиция в корзине', () => {
+    useCartStore.getState().addItem({
+      productId: 'p1',
+      name: 'Тестовый товар',
+      price: 500,
+      currency: 'RUB',
+      quantity: 7,
+    });
+    renderRow(makeProduct({ stock: 10 }));
+    expect(screen.getByText('7')).toBeInTheDocument();
+  });
+
+  it('клампит ввод до размера остатка', () => {
+    renderRow(makeProduct({ stock: 5 }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '999' } });
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(useCartStore.getState().items[0].quantity).toBe(5);
   });
 });
