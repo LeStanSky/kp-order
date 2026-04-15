@@ -1,14 +1,5 @@
-import { useState } from 'react';
-import {
-  TableRow,
-  TableCell,
-  TextField,
-  IconButton,
-  Chip,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import { useEffect, useState } from 'react';
+import { TableRow, TableCell, TextField, Chip, Typography } from '@mui/material';
 import type { Product } from '@/types/product.types';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
@@ -26,10 +17,11 @@ interface ProductRowProps {
   onOpen?: () => void;
 }
 
+const CART_SYNC_DEBOUNCE_MS = 400;
+
 export function ProductRow({ product, onOpen }: ProductRowProps) {
   const { hasRole, user } = useAuthStore();
-  const { items, addItem, updateQuantity } = useCartStore();
-  const [inputQty, setInputQty] = useState(0);
+  const { items, addItem, updateQuantity, removeItem } = useCartStore();
 
   const isClient = hasRole('CLIENT');
   const canOrder = isClient && user?.canOrder !== false;
@@ -39,26 +31,51 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
   const displayStock = resolveStock(product.name, product.stock, product.unit);
   const displayPrice = resolvePrice(product.prices, product.name, product.unit);
   const outOfStock = displayStock.value === 0;
-  const availableQty = Math.max(0, displayStock.value - (cartItem?.quantity ?? 0));
 
-  const handleAdd = () => {
-    if (inputQty < 1) return;
-    const clampedQty = Math.min(inputQty, availableQty);
-    if (clampedQty < 1) return;
-    if (cartItem) {
-      updateQuantity(product.id, cartItem.quantity + clampedQty);
-    } else {
-      addItem({
-        productId: product.id,
-        name: displayName,
-        price: displayPrice?.value ?? 0,
-        currency: displayPrice?.currency ?? 'RUB',
-        quantity: clampedQty,
-        isKeg: isKeg(product.name, product.unit),
-      });
-    }
-    setInputQty(0);
-  };
+  const cartQty = cartItem?.quantity ?? 0;
+  const [inputQty, setInputQty] = useState(cartQty);
+  const [trackedCartQty, setTrackedCartQty] = useState(cartQty);
+  if (cartQty !== trackedCartQty) {
+    setTrackedCartQty(cartQty);
+    setInputQty(cartQty);
+  }
+
+  useEffect(() => {
+    if (inputQty === cartQty) return;
+    const handle = setTimeout(() => {
+      const target = Math.min(Math.max(0, inputQty), displayStock.value);
+      if (target === cartQty) return;
+      if (target === 0) {
+        if (cartItem) removeItem(product.id);
+      } else if (cartItem) {
+        updateQuantity(product.id, target);
+      } else {
+        addItem({
+          productId: product.id,
+          name: displayName,
+          price: displayPrice?.value ?? 0,
+          currency: displayPrice?.currency ?? 'RUB',
+          quantity: target,
+          isKeg: isKeg(product.name, product.unit),
+        });
+      }
+    }, CART_SYNC_DEBOUNCE_MS);
+    return () => clearTimeout(handle);
+  }, [
+    inputQty,
+    cartQty,
+    cartItem,
+    product.id,
+    product.name,
+    product.unit,
+    displayName,
+    displayPrice?.value,
+    displayPrice?.currency,
+    displayStock.value,
+    addItem,
+    updateQuantity,
+    removeItem,
+  ]);
 
   return (
     <TableRow
@@ -104,7 +121,7 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
         )}
       </TableCell>
 
-      {/* Кол-во + кнопка (только для CLIENT с canOrder) */}
+      {/* Кол-во (только для CLIENT с canOrder) */}
       {canOrder && (
         <>
           <TableCell align="center" sx={{ width: 100 }}>
@@ -113,29 +130,18 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
               size="small"
               value={inputQty}
               onChange={(e) =>
-                setInputQty(Math.min(Math.max(0, Number(e.target.value)), availableQty))
+                setInputQty(Math.min(Math.max(0, Number(e.target.value)), displayStock.value))
               }
-              disabled={outOfStock || availableQty === 0}
+              disabled={outOfStock}
               slotProps={{
-                htmlInput: { min: 0, max: availableQty, style: { textAlign: 'center', width: 60 } },
+                htmlInput: {
+                  min: 0,
+                  max: displayStock.value,
+                  style: { textAlign: 'center', width: 60 },
+                },
               }}
               variant="outlined"
             />
-          </TableCell>
-
-          <TableCell align="center" sx={{ width: 56 }}>
-            <Tooltip title={outOfStock ? 'Нет в наличии' : 'Добавить в корзину'}>
-              <span>
-                <IconButton
-                  color="primary"
-                  onClick={handleAdd}
-                  disabled={outOfStock || inputQty < 1 || availableQty === 0}
-                  size="small"
-                >
-                  <AddShoppingCartIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
           </TableCell>
 
           {/* В корзине */}
