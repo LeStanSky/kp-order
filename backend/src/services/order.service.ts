@@ -11,7 +11,14 @@ interface RequestUser {
   role: 'CLIENT' | 'MANAGER' | 'ADMIN';
 }
 
+const PIECE_MARKER = /(?:^|\s)ШТ(?=\s|$|[.,])/;
+
+function isKegSoldByPiece(name: string): boolean {
+  return PIECE_MARKER.test(name);
+}
+
 function isKeg(name: string, unit: string | null): boolean {
+  if (isKegSoldByPiece(name)) return false;
   return unit === 'дкл' || /PET\s+KEG/i.test(name);
 }
 

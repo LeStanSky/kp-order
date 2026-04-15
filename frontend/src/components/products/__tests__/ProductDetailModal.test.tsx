@@ -115,29 +115,29 @@ describe('ProductDetailModal — renders', () => {
 });
 
 describe('ProductDetailModal — роли', () => {
-  it('CLIENT: shows "В корзину" button when in stock', () => {
+  it('CLIENT: shows quantity input when in stock', () => {
     useAuthStore.getState().setAuth(clientUser, tokens);
     renderModal(makeProduct({ stock: 5 }));
-    expect(screen.getByRole('button', { name: /в корзину/i })).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton')).toBeInTheDocument();
   });
 
-  it('CLIENT: no "В корзину" when out of stock', () => {
+  it('CLIENT: no quantity input when out of stock', () => {
     useAuthStore.getState().setAuth(clientUser, tokens);
     renderModal(makeProduct({ stock: 0 }));
-    expect(screen.queryByRole('button', { name: /в корзину/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
   });
 
-  it('CLIENT with canOrder=false: no "В корзину" button', () => {
+  it('CLIENT with canOrder=false: no quantity input', () => {
     const viewOnlyClient: User = { ...clientUser, canOrder: false };
     useAuthStore.getState().setAuth(viewOnlyClient, tokens);
     renderModal(makeProduct({ stock: 5 }));
-    expect(screen.queryByRole('button', { name: /в корзину/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
   });
 
-  it('MANAGER: no "В корзину" button', () => {
+  it('MANAGER: no quantity input', () => {
     useAuthStore.getState().setAuth(managerUser, tokens);
     renderModal(makeProduct({ stock: 5 }));
-    expect(screen.queryByRole('button', { name: /в корзину/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
   });
 
   it('ADMIN: shows "Загрузить фото" button', () => {

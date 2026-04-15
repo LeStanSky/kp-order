@@ -50,7 +50,6 @@ async function syncProducts(_job: Job): Promise<ERPSyncResult> {
         update: {
           name: erpProduct.name,
           cleanName: productCleanName,
-          description: erpProduct.description,
           category: erpProduct.category,
           unit: erpProduct.unit,
           imageUrl: erpProduct.imageUrl,

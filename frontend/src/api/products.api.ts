@@ -39,4 +39,12 @@ export const productsApi = {
   deleteImage: async (id: string): Promise<void> => {
     await apiClient.delete(`/api/products/${id}/image`);
   },
+
+  updateProduct: async (
+    id: string,
+    data: { description?: string | null; characteristics?: Record<string, string> },
+  ): Promise<Product> => {
+    const { data: product } = await apiClient.patch<Product>(`/api/products/${id}`, data);
+    return product;
+  },
 };

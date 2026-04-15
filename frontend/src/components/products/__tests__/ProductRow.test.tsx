@@ -61,7 +61,6 @@ describe('ProductRow — canOrder flag', () => {
     useAuthStore.getState().setAuth(viewOnlyClient, tokens);
     renderRow(makeProduct());
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('AddShoppingCartIcon')).not.toBeInTheDocument();
   });
 
   it('shows cart controls for CLIENT with canOrder=true', () => {
@@ -69,7 +68,6 @@ describe('ProductRow — canOrder flag', () => {
     useAuthStore.getState().setAuth(orderClient, tokens);
     renderRow(makeProduct());
     expect(screen.getByRole('spinbutton')).toBeInTheDocument();
-    expect(screen.getByTestId('AddShoppingCartIcon')).toBeInTheDocument();
   });
 });
 
@@ -222,5 +220,50 @@ describe('ProductRow — цена KEG (дкл × объём)', () => {
       }),
     );
     expect(screen.getByText('1500.00 RUB')).toBeInTheDocument();
+  });
+});
+
+describe('ProductRow — KEG ШТ (маркер "ШТ" в названии)', () => {
+  beforeEach(() => {
+    useAuthStore.getState().setAuth(clientUser, tokens);
+  });
+
+  it('не делит остаток для позиции с маркером ШТ (unit=дкл)', () => {
+    renderRow(makeProduct({ name: 'Jaws APA алк. 5,5% об. 20л ШТ', stock: 6, unit: 'дкл' }));
+    expect(screen.getByText('6')).toBeInTheDocument();
+  });
+
+  it('не умножает цену для позиции с маркером ШТ', () => {
+    renderRow(
+      makeProduct({
+        name: 'Jaws APA алк. 5,5% об. 20л ШТ',
+        unit: 'дкл',
+        stock: 6,
+        prices: [{ value: 1800, currency: 'RUB', priceGroup: 'Прайс основной' }],
+      }),
+    );
+    expect(screen.getByText('1800.00 RUB')).toBeInTheDocument();
+  });
+
+  it('не делит остаток для позиции ШТ с PET KEG в названии', () => {
+    renderRow(makeProduct({ name: 'Jaws APA PET KEG 20 л. ШТ', stock: 4, unit: 'шт' }));
+    expect(screen.getByText('4')).toBeInTheDocument();
+  });
+
+  it('убирает маркер "ШТ" и "PET KEG" из отображаемого названия', () => {
+    renderRow(makeProduct({ name: 'Jaws APA PET KEG 20 л. ШТ', stock: 4, unit: 'шт' }));
+    expect(screen.queryByText(/PET KEG/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Jaws APA 20 л.')).toBeInTheDocument();
+  });
+
+  it('убирает маркер "ШТ" из названия (unit=дкл)', () => {
+    renderRow(makeProduct({ name: 'Jaws APA алк. 5,5% об. 20л ШТ', stock: 6, unit: 'дкл' }));
+    expect(screen.getByText('Jaws APA алк. 5,5% об. 20л')).toBeInTheDocument();
+  });
+
+  it('не трогает слова, содержащие "шт" в нижнем регистре (например "штук")', () => {
+    renderRow(makeProduct({ name: 'Пиво штучное', stock: 5, unit: 'шт' }));
+    expect(screen.getByText('Пиво штучное')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
   });
 });
