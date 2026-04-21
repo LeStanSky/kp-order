@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { ExpiryBadge } from './ExpiryBadge';
 import {
-  isKeg,
+  isKegProduct,
   resolveDisplayName,
   resolveStock,
   resolvePrice,
@@ -56,7 +56,7 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
           price: displayPrice?.value ?? 0,
           currency: displayPrice?.currency ?? 'RUB',
           quantity: target,
-          isKeg: isKeg(product.name, product.unit),
+          isKeg: isKegProduct(product.name, product.unit),
         });
       }
     }, CART_SYNC_DEBOUNCE_MS);

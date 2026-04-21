@@ -23,6 +23,11 @@ export function isKeg(name: string, unit: string | undefined): boolean {
   return unit === 'дкл' || hasKegName(name);
 }
 
+/** Определяет, является ли товар любой KEG-позицией (дкл или штучной). */
+export function isKegProduct(name: string, unit: string | undefined): boolean {
+  return isKegSoldByPiece(name) || isKeg(name, unit);
+}
+
 /**
  * Для KEG-товаров убирает "PET KEG", "розлив" и маркер "ШТ" из отображаемого названия.
  */
