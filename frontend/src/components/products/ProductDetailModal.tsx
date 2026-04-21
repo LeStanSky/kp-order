@@ -27,7 +27,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { productsApi } from '@/api/products.api';
 import {
-  isKeg,
+  isKegProduct,
   resolveDisplayName,
   resolveStock,
   resolvePrice,
@@ -120,7 +120,7 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
           price: displayPrice?.value ?? 0,
           currency: displayPrice?.currency ?? 'RUB',
           quantity: target,
-          isKeg: isKeg(product.name, product.unit),
+          isKeg: isKegProduct(product.name, product.unit),
         });
       }
     }, 400);
