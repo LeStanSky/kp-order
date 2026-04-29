@@ -1,72 +1,72 @@
-# KPOrder -- документация
+# KPOrder -- Documentation
 
-## Навигация
+## Navigation
 
-| Документ                       | Описание                      |
-| ------------------------------ | ----------------------------- |
-| [onboarding.md](onboarding.md) | Руководство для пользователей |
+| Document                       | Description     |
+| ------------------------------ | --------------- |
+| [onboarding.md](onboarding.md) | User onboarding |
 
 ---
 
-## Быстрый старт (разработка)
+## Quick start (development)
 
-### Предварительные требования
+### Prerequisites
 
-- Docker (для PostgreSQL и Redis)
+- Docker (for PostgreSQL and Redis)
 - Node.js 22+
 - pnpm
 
-### Запуск
+### Run
 
 ```bash
-# 1. Запустить БД и Redis (WSL или Linux)
+# 1. Start DB and Redis (WSL or Linux)
 docker compose up -d
 
-# 2. Установить зависимости
+# 2. Install dependencies
 pnpm install
 
-# 3. Скопировать и заполнить .env
+# 3. Copy and fill in .env
 cp backend/.env.example backend/.env
-# Заполнить MOYSKLAD_TOKEN если нужна реальная синхронизация
-# ERP_TYPE=mock -- для разработки без МойСклад
+# Set MOYSKLAD_TOKEN if real synchronization is required
+# ERP_TYPE=mock -- for development without МойСклад
 
-# 4. Применить миграции и заполнить начальные данные
+# 4. Apply migrations and seed initial data
 pnpm --filter backend exec prisma migrate dev
 pnpm --filter backend exec prisma db seed
 
-# 5. Запустить backend
+# 5. Start backend
 pnpm --filter backend dev   # http://localhost:3000
 
-# 6. Запустить frontend (в отдельном терминале)
+# 6. Start frontend (in a separate terminal)
 pnpm --filter frontend dev  # http://localhost:5173
 ```
 
-### Тестовые пользователи (после seed)
+### Test users (after seed)
 
-| Email                  | Пароль      | Роль    |
+| Email                  | Password    | Role    |
 | ---------------------- | ----------- | ------- |
 | admin@erpstock.local   | password123 | ADMIN   |
 | manager@erpstock.local | password123 | MANAGER |
 | client1@erpstock.local | password123 | CLIENT  |
 | client2@erpstock.local | password123 | CLIENT  |
 
-### Тесты
+### Tests
 
 ```bash
-pnpm --filter backend test   # 361 тест
-pnpm --filter frontend test  # 198 тестов
+pnpm --filter backend test   # 361 tests
+pnpm --filter frontend test  # 198 tests
 ```
 
 ---
 
-## Статус разработки
+## Development status
 
-| Фаза                             | Статус      |
-| -------------------------------- | ----------- |
-| Инфраструктура                   | Done        |
-| Backend MVP (продукты, заказы)   | Done        |
-| Детали продукта (фото, хар-ки)   | Done        |
-| Оповещения об остатках           | Done        |
-| Управление пользователями        | Done        |
-| Пользовательское тестирование    | В процессе  |
-| Автоматизация заказов в МойСклад | Планируется |
+| Phase                           | Status      |
+| ------------------------------- | ----------- |
+| Infrastructure                  | Done        |
+| Backend MVP (products, orders)  | Done        |
+| Product details (photos, specs) | Done        |
+| Stock alerts                    | Done        |
+| User management                 | Done        |
+| User testing                    | In progress |
+| Order automation in МойСклад    | Planned     |
