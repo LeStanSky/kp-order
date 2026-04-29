@@ -7,6 +7,8 @@ import { Toaster } from 'react-hot-toast';
 import { createAppTheme } from '@/config/theme';
 import { useThemeStore } from '@/store/themeStore';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
+import { AgeVerificationGate } from '@/components/common/AgeVerificationGate';
+import { PrivacyConsentBanner } from '@/components/common/PrivacyConsentBanner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { ChangePasswordPage } from '@/pages/auth/ChangePasswordPage';
@@ -16,6 +18,8 @@ import { OrdersPage } from '@/pages/orders/OrdersPage';
 import { OrderDetailPage } from '@/pages/orders/OrderDetailPage';
 import { StockAlertsPage } from '@/pages/stockAlerts/StockAlertsPage';
 import { UsersPage } from '@/pages/users/UsersPage';
+import { ComeBackLaterPage } from '@/pages/ComeBackLaterPage';
+import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
 import { useAuthStore } from '@/store/authStore';
 
 const queryClient = new QueryClient({
@@ -42,79 +46,84 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <LoginPage />
-                </PublicRoute>
-              }
-            />
-            <Route path="/register" element={<Navigate to="/login" replace />} />
-            <Route path="/change-password" element={<ChangePasswordPage />} />
-            <Route
-              path="/products"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <ProductsPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cart"
-              element={
-                <ProtectedRoute allowedRoles={['CLIENT']}>
-                  <AppLayout>
-                    <CartPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <OrdersPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders/:id"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <OrderDetailPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/stock-alerts"
-              element={
-                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
-                  <AppLayout>
-                    <StockAlertsPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/users"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <AppLayout>
-                    <UsersPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/" element={<Navigate to="/products" replace />} />
-          </Routes>
+          <AgeVerificationGate>
+            <Routes>
+              <Route path="/come-back-later" element={<ComeBackLaterPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <LoginPage />
+                  </PublicRoute>
+                }
+              />
+              <Route path="/register" element={<Navigate to="/login" replace />} />
+              <Route path="/change-password" element={<ChangePasswordPage />} />
+              <Route
+                path="/products"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ProductsPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute allowedRoles={['CLIENT']}>
+                    <AppLayout>
+                      <CartPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <OrdersPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders/:id"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <OrderDetailPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/stock-alerts"
+                element={
+                  <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+                    <AppLayout>
+                      <StockAlertsPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/users"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AppLayout>
+                      <UsersPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/" element={<Navigate to="/products" replace />} />
+            </Routes>
+            <PrivacyConsentBanner />
+          </AgeVerificationGate>
         </BrowserRouter>
         <Toaster position="top-right" />
       </ThemeProvider>
