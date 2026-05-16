@@ -121,6 +121,7 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
           currency: displayPrice?.currency ?? 'RUB',
           quantity: target,
           isKeg: isKegProduct(product.name, product.unit),
+          category: product.category,
         });
       }
     }, 400);

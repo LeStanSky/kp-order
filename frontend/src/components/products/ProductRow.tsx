@@ -57,6 +57,7 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
           currency: displayPrice?.currency ?? 'RUB',
           quantity: target,
           isKeg: isKegProduct(product.name, product.unit),
+          category: product.category,
         });
       }
     }, CART_SYNC_DEBOUNCE_MS);
@@ -68,6 +69,7 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
     product.id,
     product.name,
     product.unit,
+    product.category,
     displayName,
     displayPrice?.value,
     displayPrice?.currency,
