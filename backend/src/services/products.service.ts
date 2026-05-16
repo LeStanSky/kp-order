@@ -45,6 +45,7 @@ export const productsService = {
         unit: product.unit,
         imageUrl: product.imageUrl,
         isActive: product.isActive,
+        packSize: product.packSize,
         stock: (product.stocks as any[]).reduce((sum: number, s: any) => sum + s.quantity, 0),
         prices:
           (product as any).prices?.map((p: any) => ({
@@ -92,6 +93,7 @@ export const productsService = {
       imageUrl: product.imageUrl,
       characteristics: product.characteristics ?? null,
       isActive: product.isActive,
+      packSize: product.packSize,
       stock: (product.stocks as any[]).reduce((sum: number, s: any) => sum + s.quantity, 0),
       stocks: product.stocks.map((s: any) => ({
         quantity: s.quantity,
@@ -115,7 +117,11 @@ export const productsService = {
 
   async updateProduct(
     id: string,
-    data: { description?: string | null; characteristics?: Record<string, string> },
+    data: {
+      description?: string | null;
+      characteristics?: Record<string, string>;
+      packSize?: number | null;
+    },
   ) {
     const product = await productRepository.findById(id);
     if (!product) {

@@ -21,6 +21,7 @@ export interface Product {
   expiryDate?: string;
   expiryStatus?: ExpiryStatus;
   characteristics?: Record<string, string>;
+  packSize?: number | null;
 }
 
 export interface ProductsResponse {

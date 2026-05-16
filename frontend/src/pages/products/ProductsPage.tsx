@@ -130,6 +130,7 @@ export function ProductsPage() {
                   <TableCell>Наименование</TableCell>
                   <TableCell align="center">Ед.</TableCell>
                   <TableCell align="right">Остаток</TableCell>
+                  <TableCell align="right">В уп.</TableCell>
                   <TableCell align="right">Цена</TableCell>
                   {canOrder && (
                     <>
@@ -150,7 +151,7 @@ export function ProductsPage() {
                         onClick={() => toggleCategory(catName)}
                       >
                         <TableCell
-                          colSpan={canOrder ? 6 : 4}
+                          colSpan={canOrder ? 7 : 5}
                           sx={{
                             py: 0.5,
                             fontWeight: 700,

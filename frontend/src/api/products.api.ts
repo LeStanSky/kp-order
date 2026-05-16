@@ -42,7 +42,11 @@ export const productsApi = {
 
   updateProduct: async (
     id: string,
-    data: { description?: string | null; characteristics?: Record<string, string> },
+    data: {
+      description?: string | null;
+      characteristics?: Record<string, string>;
+      packSize?: number | null;
+    },
   ): Promise<Product> => {
     const { data: product } = await apiClient.patch<Product>(`/api/products/${id}`, data);
     return product;
