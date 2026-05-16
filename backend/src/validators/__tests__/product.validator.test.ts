@@ -133,6 +133,42 @@ describe('updateProductSchema', () => {
       expect(result.data.description).toBeNull();
     }
   });
+
+  it('should accept positive integer packSize', () => {
+    const result = updateProductSchema.safeParse({ packSize: 12 });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.packSize).toBe(12);
+    }
+  });
+
+  it('should accept null packSize to clear it', () => {
+    const result = updateProductSchema.safeParse({ packSize: null });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.packSize).toBeNull();
+    }
+  });
+
+  it('should reject zero packSize', () => {
+    const result = updateProductSchema.safeParse({ packSize: 0 });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject negative packSize', () => {
+    const result = updateProductSchema.safeParse({ packSize: -1 });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject non-integer packSize', () => {
+    const result = updateProductSchema.safeParse({ packSize: 1.5 });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject string packSize', () => {
+    const result = updateProductSchema.safeParse({ packSize: '12' });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('productIdParamSchema', () => {

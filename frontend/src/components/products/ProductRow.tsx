@@ -9,6 +9,7 @@ import {
   resolveDisplayName,
   resolveStock,
   resolvePrice,
+  resolvePackSize,
   formatPrice,
 } from '@/utils/productDisplay';
 
@@ -30,6 +31,7 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
   const displayName = resolveDisplayName(product.name, product.unit);
   const displayStock = resolveStock(product.name, product.stock, product.unit);
   const displayPrice = resolvePrice(product.prices, product.name, product.unit);
+  const displayPackSize = resolvePackSize(product.name, product.unit, product.packSize);
   const outOfStock = displayStock.value === 0;
 
   const cartQty = cartItem?.quantity ?? 0;
@@ -108,6 +110,19 @@ export function ProductRow({ product, onOpen }: ProductRowProps) {
       {/* Остаток */}
       <TableCell align="right">
         <Typography variant="body2">{displayStock.value}</Typography>
+      </TableCell>
+
+      {/* В упаковке */}
+      <TableCell align="right">
+        {displayPackSize ? (
+          <Typography variant="body2">
+            {displayPackSize.value} {displayPackSize.unit}
+          </Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            —
+          </Typography>
+        )}
       </TableCell>
 
       {/* Цена */}

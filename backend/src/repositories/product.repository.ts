@@ -134,6 +134,7 @@ export const productRepository = {
       description?: string | null;
       characteristics?: Record<string, string>;
       imageUrl?: string | null;
+      packSize?: number | null;
     },
   ) {
     return prisma.product.update({
