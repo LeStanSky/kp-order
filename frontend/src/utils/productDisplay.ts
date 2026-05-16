@@ -61,6 +61,32 @@ export function resolveStock(
 }
 
 /**
+ * Размер упаковки: ручное переопределение или авто для KEG (объём в литрах из названия).
+ * Возвращает null, если ни override, ни авто-фоллбэк не дали значения.
+ */
+export function resolvePackSize(
+  name: string,
+  unit: string | undefined,
+  packSize: number | null | undefined,
+): { value: number; unit: string } | null {
+  const isAnyKeg = isKegProduct(name, unit);
+  const displayUnit = isAnyKeg ? 'л' : (unit ?? 'шт');
+
+  if (packSize != null) {
+    return { value: packSize, unit: displayUnit };
+  }
+
+  if (isAnyKeg) {
+    const match = name.match(/(?<!\d)(10|20|30)\s*л\.?/i);
+    if (match) {
+      return { value: parseInt(match[1], 10), unit: 'л' };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Для KEG-товаров пересчитывает цену за 10л → цену за весь кег.
  * 20л → ×2, 30л → ×3.
  */

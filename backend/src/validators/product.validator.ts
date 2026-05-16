@@ -19,6 +19,7 @@ export const updateProductSchema = z
   .object({
     description: z.string().nullable().optional(),
     characteristics: z.record(z.string(), z.string()).optional(),
+    packSize: z.number().int().positive().nullable().optional(),
   })
   .strict()
   .refine((data) => Object.keys(data).length > 0, {

@@ -31,6 +31,7 @@ import {
   resolveDisplayName,
   resolveStock,
   resolvePrice,
+  resolvePackSize,
   formatPrice,
 } from '@/utils/productDisplay';
 
@@ -50,12 +51,16 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
   const [prevProductId, setPrevProductId] = useState<string | null>(null);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState('');
+  const [isEditingPackSize, setIsEditingPackSize] = useState(false);
+  const [packSizeDraft, setPackSizeDraft] = useState('');
   if (product && product.id !== prevProductId) {
     setPrevProductId(product.id);
     setQty(cartQty);
     setTrackedCartQty(cartQty);
     setIsEditingDescription(false);
     setDescriptionDraft('');
+    setIsEditingPackSize(false);
+    setPackSizeDraft('');
   } else if (cartQty !== trackedCartQty) {
     setTrackedCartQty(cartQty);
     setQty(cartQty);
@@ -91,6 +96,17 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
     onError: () => toast.error('Ошибка сохранения описания'),
   });
 
+  const packSizeMutation = useMutation({
+    mutationFn: (packSize: number | null) =>
+      productsApi.updateProduct(product?.id ?? '', { packSize }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setIsEditingPackSize(false);
+      toast.success('Сохранено');
+    },
+    onError: () => toast.error('Ошибка сохранения'),
+  });
+
   const isClient = hasRole('CLIENT');
   const canOrder = isClient && user?.canOrder !== false;
   const isAdmin = hasRole('ADMIN');
@@ -100,6 +116,9 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
     ? resolveStock(product.name, product.stock, product.unit)
     : { value: 0, unit: 'шт' };
   const displayPrice = product ? resolvePrice(product.prices, product.name, product.unit) : null;
+  const displayPackSize = product
+    ? resolvePackSize(product.name, product.unit, product.packSize)
+    : null;
   const outOfStock = displayStock.value === 0;
   const cartItem = currentCartItem;
 
@@ -121,6 +140,7 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
           currency: displayPrice?.currency ?? 'RUB',
           quantity: target,
           isKeg: isKegProduct(product.name, product.unit),
+          category: product.category,
         });
       }
     }, 400);
@@ -327,6 +347,80 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
                 <Typography variant="body1" fontWeight={600}>
                   {formatPrice(displayPrice.value)} {displayPrice.currency}
                 </Typography>
+              )}
+            </Stack>
+
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2, minHeight: 32 }}>
+              <Typography variant="body2" color="text.secondary">
+                В упаковке:
+              </Typography>
+              {isAdmin && isEditingPackSize ? (
+                <>
+                  <TextField
+                    type="number"
+                    size="small"
+                    value={packSizeDraft}
+                    onChange={(e) => setPackSizeDraft(e.target.value)}
+                    placeholder="—"
+                    slotProps={{
+                      htmlInput: {
+                        min: 1,
+                        step: 1,
+                        style: { textAlign: 'center', width: 60 },
+                      },
+                    }}
+                    autoFocus
+                  />
+                  <Button
+                    size="small"
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={() => {
+                      const trimmed = packSizeDraft.trim();
+                      if (trimmed === '') {
+                        packSizeMutation.mutate(null);
+                      } else {
+                        const n = Number(trimmed);
+                        if (!Number.isInteger(n) || n <= 0) {
+                          toast.error('Введите целое число больше 0');
+                          return;
+                        }
+                        packSizeMutation.mutate(n);
+                      }
+                    }}
+                    loading={packSizeMutation.isPending}
+                  >
+                    Сохранить
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setIsEditingPackSize(false);
+                      setPackSizeDraft(product.packSize?.toString() ?? '');
+                    }}
+                    disabled={packSizeMutation.isPending}
+                  >
+                    Отмена
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Typography variant="body2" fontWeight={500}>
+                    {displayPackSize ? `${displayPackSize.value} ${displayPackSize.unit}` : '—'}
+                  </Typography>
+                  {isAdmin && (
+                    <IconButton
+                      size="small"
+                      aria-label="Редактировать количество в упаковке"
+                      onClick={() => {
+                        setPackSizeDraft(product.packSize?.toString() ?? '');
+                        setIsEditingPackSize(true);
+                      }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </>
               )}
             </Stack>
 

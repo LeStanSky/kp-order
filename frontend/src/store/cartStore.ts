@@ -8,6 +8,7 @@ export interface CartItem {
   currency: string;
   quantity: number;
   isKeg?: boolean;
+  category?: string;
 }
 
 interface CartState {

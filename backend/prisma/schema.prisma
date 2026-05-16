@@ -87,6 +87,7 @@ model Product {
   imageUrl        String?   @map("image_url")
   characteristics Json?
   expiryDate      DateTime? @map("expiry_date")
+  packSize        Int?      @map("pack_size")
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
