@@ -112,6 +112,60 @@ describe('validateCart — per-item minimum', () => {
   });
 });
 
+describe('validateCart — Чипсы per-item minimum (5 шт)', () => {
+  it('violation when Чипсы quantity < 5', () => {
+    const violations = validateCart([makeItem({ category: 'Чипсы', quantity: 4 })]);
+    expect(violations.filter((v) => v.type === 'item_min_qty')).toHaveLength(1);
+  });
+
+  it('violation when Чипсы quantity === 3 (was the old minimum)', () => {
+    const violations = validateCart([makeItem({ category: 'Чипсы', quantity: 3 })]);
+    expect(violations.filter((v) => v.type === 'item_min_qty')).toHaveLength(1);
+  });
+
+  it('no per-item violation when Чипсы quantity === 5', () => {
+    const violations = validateCart([makeItem({ category: 'Чипсы', quantity: 5 })]);
+    expect(violations.filter((v) => v.type === 'item_min_qty')).toHaveLength(0);
+  });
+
+  it('no per-item violation when Чипсы quantity > 5', () => {
+    const violations = validateCart([makeItem({ category: 'Чипсы', quantity: 10 })]);
+    expect(violations.filter((v) => v.type === 'item_min_qty')).toHaveLength(0);
+  });
+
+  it('Чипсы violation message mentions 5 шт', () => {
+    const violations = validateCart([makeItem({ category: 'Чипсы', quantity: 2 })]);
+    const v = violations.find((vio) => vio.type === 'item_min_qty')!;
+    expect(v.message).toMatch(/5/);
+  });
+
+  it('non-Чипсы packaged item keeps 3 шт minimum', () => {
+    const violations = validateCart([makeItem({ category: 'Молочные', quantity: 3 })]);
+    expect(violations.filter((v) => v.type === 'item_min_qty')).toHaveLength(0);
+  });
+
+  it('non-Чипсы packaged item with qty 4 is OK (only Чипсы need 5)', () => {
+    const violations = validateCart([makeItem({ category: 'Молочные', quantity: 4 })]);
+    expect(violations.filter((v) => v.type === 'item_min_qty')).toHaveLength(0);
+  });
+
+  it('mixed cart: Чипсы with qty 3 violates, other packaged with qty 3 OK', () => {
+    const violations = validateCart([
+      makeItem({ productId: 'chips', category: 'Чипсы', quantity: 3 }),
+      makeItem({ productId: 'milk', category: 'Молочные', quantity: 3 }),
+    ]);
+    const itemViolations = violations.filter((v) => v.type === 'item_min_qty');
+    expect(itemViolations).toHaveLength(1);
+    expect(itemViolations[0].productId).toBe('chips');
+  });
+
+  it('Чипсы count toward packaged total for order_min', () => {
+    // 40 Чипсы of qty 5 each... no, just test that Чипсы contribute to packaged
+    const violations = validateCart([makeItem({ category: 'Чипсы', quantity: 40 })]);
+    expect(violations.filter((v) => v.type === 'order_min')).toHaveLength(0);
+  });
+});
+
 describe('validateCart — REMOTE delivery category', () => {
   it('no violation when total >= 30000', () => {
     const violations = validateCart([makeItem({ price: 1000, quantity: 30 })], 'REMOTE');

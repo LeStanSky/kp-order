@@ -8,6 +8,8 @@ export interface CartViolation {
 }
 
 const PACKAGED_MIN_PER_ITEM = 3;
+const CHIPS_CATEGORY = 'Чипсы';
+const CHIPS_MIN_PER_ITEM = 5;
 const PACKAGED_ORDER_MIN = 40;
 const REMOTE_ORDER_MIN_AMOUNT = 30000;
 
@@ -28,13 +30,15 @@ export function validateCart(
     return violations;
   }
 
-  // STANDARD: per-item minimum for non-KEG items
+  // STANDARD: per-item minimum for non-KEG items (Чипсы — 5 шт, остальное — 3 шт)
   for (const item of items) {
-    if (!item.isKeg && item.quantity < PACKAGED_MIN_PER_ITEM) {
+    if (item.isKeg) continue;
+    const min = item.category === CHIPS_CATEGORY ? CHIPS_MIN_PER_ITEM : PACKAGED_MIN_PER_ITEM;
+    if (item.quantity < min) {
       violations.push({
         type: 'item_min_qty',
         productId: item.productId,
-        message: `«${item.name}»: минимум ${PACKAGED_MIN_PER_ITEM} шт (сейчас ${item.quantity})`,
+        message: `«${item.name}»: минимум ${min} шт (сейчас ${item.quantity})`,
       });
     }
   }
