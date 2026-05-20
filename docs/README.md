@@ -2,9 +2,10 @@
 
 ## Navigation
 
-| Document                       | Description     |
-| ------------------------------ | --------------- |
-| [onboarding.md](onboarding.md) | User onboarding |
+| Document                       | Description                       |
+| ------------------------------ | --------------------------------- |
+| [onboarding.md](onboarding.md) | User onboarding                   |
+| [CHANGELOG.md](CHANGELOG.md)   | Release history (features, fixes) |
 
 ---
 
@@ -53,20 +54,25 @@ pnpm --filter frontend dev  # http://localhost:5173
 ### Tests
 
 ```bash
-pnpm --filter backend test   # 361 tests
-pnpm --filter frontend test  # 198 tests
+pnpm --filter backend test   # 370 tests
+pnpm --filter frontend test  # 268 tests
 ```
 
 ---
 
 ## Development status
 
-| Phase                           | Status      |
-| ------------------------------- | ----------- |
-| Infrastructure                  | Done        |
-| Backend MVP (products, orders)  | Done        |
-| Product details (photos, specs) | Done        |
-| Stock alerts                    | Done        |
-| User management                 | Done        |
-| User testing                    | In progress |
-| Order automation in МойСклад    | Planned     |
+| Phase                                    | Status |
+| ---------------------------------------- | ------ |
+| Infrastructure                           | Done   |
+| Backend MVP (products, orders)           | Done   |
+| Product details (photos, specs)          | Done   |
+| Stock alerts                             | Done   |
+| User management                          | Done   |
+| Product visibility by price group        | Done   |
+| Cart minimum rules & delivery categories | Done   |
+| 18+ age verification + 152-FZ consent    | Done   |
+| User testing                             | Done   |
+| Order automation in МойСклад             | Next   |
+
+Current production version: **v1.5.0**. See [CHANGELOG.md](CHANGELOG.md) for the full release history.
