@@ -10,6 +10,15 @@
 
 ---
 
+## Age verification and privacy (all users)
+
+The product catalog contains alcohol, so the site is age-gated.
+
+- **18+ confirmation** — on first visit a blocking dialog asks you to confirm you are at least 18 years old. Confirming unlocks the site; the confirmation is remembered for 30 days. Choosing "I'm under 18" sends you to a stub page and does not lock the account (an accidental click is harmless).
+- **152-FZ consent** — a banner at the bottom of the screen asks you to agree to the personal data processing policy. Click **Agree** to dismiss it. The full text is available on the [Privacy policy](#) page (`/privacy-policy`).
+
+---
+
 ## For administrators
 
 ### Creating a user
@@ -103,9 +112,14 @@ An alert can be temporarily disabled with a toggle without deleting it.
 What is shown in a product row:
 
 - **Name** -- cleaned of technical markers
-- **Stock** -- quantity (for kegs -- whole kegs)
+- **Stock** -- quantity (for kegs -- whole kegs; kegs marked "ШТ" are counted in pieces, without conversion)
+- **Per pack** -- units per pack ("В уп."), where it is set
 - **Price** -- according to your price group
 - **Volume** -- for kegs (10, 20, 30 L)
+
+Click a product name to open its card with the photo, description and full details.
+
+> You may see fewer categories than another client: the assortment shown depends on your price group.
 
 ### Placing an order
 
@@ -116,6 +130,21 @@ What is shown in a product row:
 5. Click **Place order**
 
 The order will be assigned a number like `ORD-20260226-0001`. The manager will receive an email notification.
+
+### Minimum order requirements
+
+The cart enforces minimums before an order can be placed. The exact rules depend on your **delivery category**:
+
+**Standard delivery**
+
+- **Per item:** kegs have no minimum; chips ("Чипсы") require at least **5 units** each; other packaged goods require at least **3 units** each.
+- **Per order:** at least **1 keg** _or_ at least **40 units** of packaged goods in total.
+
+**Remote delivery**
+
+- A single rule: the order total must be at least **30,000 ₽**. Per-item minimums do not apply.
+
+If the cart does not meet a requirement, a message explains what is missing and the **Place order** button stays disabled until it is fixed.
 
 ### Repeating an order
 
