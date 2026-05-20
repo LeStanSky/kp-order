@@ -8,6 +8,7 @@ export interface CreateUserData {
   role?: UserRole;
   priceGroupId?: string | null;
   managerId?: string | null;
+  externalId?: string | null;
   canOrder?: boolean;
   mustChangePassword?: boolean;
 }

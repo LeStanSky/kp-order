@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { OrderStatus } from '../generated/prisma/client';
+import { OrderStatus, ErpSyncStatus } from '../generated/prisma/client';
 
 interface CreateOrderData {
   orderNumber: string;
@@ -86,5 +86,34 @@ export const orderRepository = {
 
   async deleteById(id: string) {
     await prisma.order.delete({ where: { id } });
+  },
+
+  /** Order with everything the ERP push worker needs (product externalId/unit + counterparty). */
+  async findForErpSync(id: string) {
+    return prisma.order.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            product: { select: { externalId: true, cleanName: true, unit: true } },
+          },
+        },
+        user: { select: { externalId: true } },
+      },
+    });
+  },
+
+  async updateErpSync(
+    id: string,
+    data: {
+      erpSyncStatus: ErpSyncStatus;
+      erpId?: string | null;
+      erpNumber?: string | null;
+      erpSyncedAt?: Date | null;
+      erpError?: string | null;
+      erpRetryCount?: number;
+    },
+  ) {
+    return prisma.order.update({ where: { id }, data });
   },
 };

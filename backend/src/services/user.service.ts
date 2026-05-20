@@ -36,6 +36,7 @@ export const userService = {
       role: data.role,
       managerId: data.managerId ?? null,
       priceGroupId: data.priceGroupId ?? null,
+      externalId: data.externalId ?? null,
       canOrder: data.canOrder,
       mustChangePassword: true,
     });

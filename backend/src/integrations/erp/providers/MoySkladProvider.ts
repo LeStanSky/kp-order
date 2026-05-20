@@ -1,5 +1,13 @@
 import { IERPProvider } from '../IERPProvider';
-import { ERPProduct, ERPSalePrice, ERPStock } from '../../../types/erp.types';
+import {
+  ERPProduct,
+  ERPSalePrice,
+  ERPStock,
+  ERPOrderInput,
+  ERPOrderResult,
+  ERPConsignment,
+  ERPCounterparty,
+} from '../../../types/erp.types';
 import { env } from '../../../config/env';
 import { logger } from '../../../utils/logger';
 import { ERPConnectionError } from '../../../utils/errors';
@@ -189,5 +197,112 @@ export class MoySkladProvider implements IERPProvider {
       logger.error('MoySklad connection test failed', { error: (err as Error).message });
       return false;
     }
+  }
+
+  private entityMeta(type: string, id: string) {
+    return {
+      meta: {
+        href: `${this.baseUrl}/entity/${type}/${id}`,
+        type,
+        mediaType: 'application/json',
+      },
+    };
+  }
+
+  async createOrder(input: ERPOrderInput): Promise<ERPOrderResult> {
+    if (!env.MOYSKLAD_ORGANIZATION_ID || !env.MOYSKLAD_STORE_ID) {
+      throw new ERPConnectionError(
+        'MoySklad order sync requires MOYSKLAD_ORGANIZATION_ID and MOYSKLAD_STORE_ID',
+      );
+    }
+
+    const body = {
+      name: input.orderNumber,
+      organization: this.entityMeta('organization', env.MOYSKLAD_ORGANIZATION_ID),
+      agent: this.entityMeta('counterparty', input.agentExternalId),
+      store: this.entityMeta('store', env.MOYSKLAD_STORE_ID),
+      description: input.comment,
+      positions: input.positions.map((p) => ({
+        quantity: p.quantity,
+        price: p.priceKopecks,
+        reserve: p.reserve,
+        assortment: p.consignmentExternalId
+          ? this.entityMeta('consignment', p.consignmentExternalId)
+          : this.entityMeta('product', p.productExternalId),
+      })),
+    };
+
+    const url = `${this.baseUrl}/entity/customerorder`;
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(body),
+    });
+    const data = (await response.json()) as { id: string; name: string };
+
+    logger.info(`MoySklad: created customerorder ${data.name} (${data.id})`);
+    return { id: data.id, number: data.name };
+  }
+
+  async getConsignments(productExternalIds: string[]): Promise<Map<string, ERPConsignment[]>> {
+    const wanted = new Set(productExternalIds);
+    const result = new Map<string, ERPConsignment[]>();
+    if (wanted.size === 0) return result;
+
+    // 1. Build product code → external id map (consignment rows reference by code).
+    const codeToProductId = new Map<string, string>();
+    let offset = 0;
+    let hasMore = true;
+    while (hasMore) {
+      const url = `${this.baseUrl}/report/stock/all?limit=${LIMIT}&offset=${offset}`;
+      const response = await fetchWithRetry(url, { headers: getHeaders() });
+      const data = (await response.json()) as any;
+      const rows = data.rows || [];
+      for (const row of rows) {
+        if (!row.meta?.href?.includes('/product/')) continue;
+        const productId = row.meta.href.split('/product/').pop()?.split('?')[0];
+        if (productId && wanted.has(productId) && row.code) {
+          codeToProductId.set(row.code, productId);
+        }
+      }
+      hasMore = rows.length === LIMIT;
+      offset += LIMIT;
+    }
+
+    // 2. Fetch consignment-level stock; keep only series for the requested products.
+    offset = 0;
+    hasMore = true;
+    while (hasMore) {
+      const url = `${this.baseUrl}/report/stock/all?limit=${LIMIT}&offset=${offset}&groupBy=consignment`;
+      const response = await fetchWithRetry(url, { headers: getHeaders() });
+      const data = (await response.json()) as any;
+      const rows = data.rows || [];
+      for (const row of rows) {
+        const productId = codeToProductId.get(row.code);
+        if (!productId) continue;
+        const consignmentId = row.meta?.href?.split('/consignment/').pop()?.split('?')[0];
+        if (!consignmentId) continue;
+        const list = result.get(productId) ?? [];
+        list.push({ id: consignmentId, name: row.name || '', quantity: row.quantity || 0 });
+        result.set(productId, list);
+      }
+      hasMore = rows.length === LIMIT;
+      offset += LIMIT;
+    }
+
+    return result;
+  }
+
+  async getCounterparties(search?: string): Promise<ERPCounterparty[]> {
+    const params = new URLSearchParams({ limit: '100' });
+    if (search) params.set('search', search);
+    const url = `${this.baseUrl}/entity/counterparty?${params.toString()}`;
+    const response = await fetchWithRetry(url, { headers: getHeaders() });
+    const data = (await response.json()) as any;
+    return (data.rows || []).map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      inn: row.inn || undefined,
+    }));
   }
 }

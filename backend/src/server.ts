@@ -4,6 +4,7 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { connectRedis, disconnectRedis } from './config/redis';
 import { setupProductSync, stopProductSync } from './jobs/syncProducts.job';
 import { setupStockAlerts, stopStockAlerts } from './jobs/stockAlerts.job';
+import { setupOrderSync, stopOrderSync } from './jobs/orderSync.job';
 import { emailService } from './services/email.service';
 import { logger } from './utils/logger';
 
@@ -12,6 +13,9 @@ async function bootstrap() {
   await connectRedis();
   setupProductSync();
   setupStockAlerts();
+  if (env.ERP_ORDER_SYNC_ENABLED) {
+    setupOrderSync();
+  }
 
   // SMTP check (non-blocking)
   if (env.SMTP_ENABLED) {
@@ -37,6 +41,9 @@ async function bootstrap() {
     server.close();
     await stopProductSync();
     await stopStockAlerts();
+    if (env.ERP_ORDER_SYNC_ENABLED) {
+      await stopOrderSync();
+    }
     await disconnectRedis();
     await disconnectDatabase();
     process.exit(0);

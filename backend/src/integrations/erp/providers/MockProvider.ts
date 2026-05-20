@@ -1,5 +1,12 @@
 import { IERPProvider } from '../IERPProvider';
-import { ERPProduct, ERPStock } from '../../../types/erp.types';
+import {
+  ERPProduct,
+  ERPStock,
+  ERPOrderInput,
+  ERPOrderResult,
+  ERPConsignment,
+  ERPCounterparty,
+} from '../../../types/erp.types';
 
 const PRICE_TYPES = [
   'Прайс основной',
@@ -203,6 +210,19 @@ const MOCK_STOCKS: ERPStock[] = [
   },
 ];
 
+const MOCK_COUNTERPARTIES: ERPCounterparty[] = [
+  { id: 'cp-001', name: 'ООО Пивная лавка', inn: '7701234567' },
+  { id: 'cp-002', name: 'ИП Иванов', inn: '500100732259' },
+  { id: 'cp-003', name: 'ООО Бар "Хмель"', inn: '7809876543' },
+];
+
+/** Days-from-now offset → date string the way consignment names encode it. */
+function offsetDate(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 export class MockProvider implements IERPProvider {
   async getProducts(): Promise<ERPProduct[]> {
     return MOCK_PRODUCTS;
@@ -214,5 +234,33 @@ export class MockProvider implements IERPProvider {
 
   async testConnection(): Promise<boolean> {
     return true;
+  }
+
+  async createOrder(input: ERPOrderInput): Promise<ERPOrderResult> {
+    return {
+      id: `mock-co-${input.orderNumber}`,
+      number: `МС-${input.orderNumber}`,
+    };
+  }
+
+  async getConsignments(productExternalIds: string[]): Promise<Map<string, ERPConsignment[]>> {
+    // Fixture: each product gets one expired + two active series (FIFO-friendly).
+    const result = new Map<string, ERPConsignment[]>();
+    for (const id of productExternalIds) {
+      result.set(id, [
+        { id: `${id}-s0`, name: `партия / ${offsetDate(-7)}`, quantity: 50 }, // expired
+        { id: `${id}-s1`, name: `партия / ${offsetDate(21)}`, quantity: 4 }, // soonest active
+        { id: `${id}-s2`, name: `партия / ${offsetDate(120)}`, quantity: 100 }, // later active
+      ]);
+    }
+    return result;
+  }
+
+  async getCounterparties(search?: string): Promise<ERPCounterparty[]> {
+    if (!search) return MOCK_COUNTERPARTIES;
+    const q = search.toLowerCase();
+    return MOCK_COUNTERPARTIES.filter(
+      (c) => c.name.toLowerCase().includes(q) || (c.inn ?? '').includes(search),
+    );
   }
 }

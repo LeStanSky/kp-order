@@ -5,29 +5,14 @@ import { generateOrderNumber } from '../utils/orderNumberGenerator';
 import { emailService } from './email.service';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors';
 import { CreateOrderInput, GetOrdersQuery } from '../validators/order.validator';
+import { resolveKegPrice } from '../utils/kegUnits';
+import { enqueueOrderSync } from '../jobs/orderSync.job';
+import { env } from '../config/env';
+import { logger } from '../utils/logger';
 
 interface RequestUser {
   id: string;
   role: 'CLIENT' | 'MANAGER' | 'ADMIN';
-}
-
-const PIECE_MARKER = /(?:^|\s)ШТ(?=\s|$|[.,])/;
-
-function isKegSoldByPiece(name: string): boolean {
-  return PIECE_MARKER.test(name);
-}
-
-function isKeg(name: string, unit: string | null): boolean {
-  if (isKegSoldByPiece(name)) return false;
-  return unit === 'дкл' || /PET\s+KEG/i.test(name);
-}
-
-function resolveKegPrice(price: number, name: string, unit: string | null): number {
-  if (!isKeg(name, unit)) return price;
-  const match = name.match(/(?<!\d)(10|20|30)\s*л\.?/i);
-  if (!match) return price;
-  const factor = parseInt(match[1], 10) / 10;
-  return Math.round(price * factor * 100) / 100;
 }
 
 export const orderService = {
@@ -105,6 +90,19 @@ export const orderService = {
       });
     }
     emailService.sendOrderConfirmationToClient(emailData);
+
+    // Push the order into the ERP (fire-and-forget; the worker handles retries).
+    if (env.ERP_ORDER_SYNC_ENABLED) {
+      if ((user as any).externalId) {
+        enqueueOrderSync(order.id).catch((err) =>
+          logger.error('Failed to enqueue order sync', { orderId: order.id, error: err.message }),
+        );
+      } else {
+        logger.warn('Order created but user has no counterparty link; skipping ERP push', {
+          orderId: order.id,
+        });
+      }
+    }
 
     return order;
   },
