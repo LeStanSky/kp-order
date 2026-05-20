@@ -24,6 +24,7 @@ import {
   Switch,
   Skeleton,
   TextField,
+  Autocomplete,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import LockResetIcon from '@mui/icons-material/LockReset';
@@ -36,8 +37,44 @@ import {
   useUpdateUser,
   useResetPassword,
   usePriceGroups,
+  useCounterparties,
 } from '@/hooks/useUsers';
 import type { AdminUser, CreateUserParams, UpdateUserParams } from '@/api/users.api';
+
+function CounterpartyField({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (id: string | null) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const { data: options = [], isFetching } = useCounterparties(search, true);
+  const selected =
+    options.find((o) => o.id === value) ?? (value ? { id: value, name: value } : null);
+
+  return (
+    <Box data-testid="counterparty-field" sx={{ mb: 2 }}>
+      <Autocomplete
+        options={options}
+        loading={isFetching}
+        value={selected}
+        isOptionEqualToValue={(o, v) => o.id === v.id}
+        getOptionLabel={(o) => (o.inn ? `${o.name} (ИНН ${o.inn})` : o.name)}
+        onInputChange={(_e, v) => setSearch(v)}
+        onChange={(_e, v) => onChange(v ? v.id : null)}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Контрагент МойСклад"
+            placeholder="Поиск по названию или ИНН"
+            helperText="Для отправки заказов в МойСклад"
+          />
+        )}
+      />
+    </Box>
+  );
+}
 
 function extractErrorMessage(err: unknown, fallback: string): string {
   const data = (err as AxiosError<{ error?: string; errors?: Record<string, string[]> }>)?.response
@@ -75,6 +112,7 @@ const EMPTY_CREATE: CreateUserParams = {
   canOrder: true,
   managerId: null,
   priceGroupId: null,
+  externalId: null,
 };
 
 export function UsersPage() {
@@ -106,6 +144,7 @@ export function UsersPage() {
       deliveryCategory: user.deliveryCategory,
       managerId: user.managerId,
       priceGroupId: user.priceGroupId,
+      externalId: user.externalId,
     });
   };
 
@@ -326,6 +365,13 @@ export function UsersPage() {
             </Select>
           </FormControl>
 
+          {editForm.role === 'CLIENT' && (
+            <CounterpartyField
+              value={editForm.externalId ?? null}
+              onChange={(id) => setEditForm((f) => ({ ...f, externalId: id }))}
+            />
+          )}
+
           <FormControlLabel
             control={
               <Switch
@@ -463,6 +509,13 @@ export function UsersPage() {
                 <MenuItem value="REMOTE">Удалённая (мин. 30 000 ₽)</MenuItem>
               </Select>
             </FormControl>
+
+            {createForm.role === 'CLIENT' && (
+              <CounterpartyField
+                value={createForm.externalId ?? null}
+                onChange={(id) => setCreateForm((f) => ({ ...f, externalId: id }))}
+              />
+            )}
 
             {createForm.role === 'CLIENT' && (
               <FormControlLabel

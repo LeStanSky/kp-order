@@ -161,4 +161,60 @@ describe('orderRepository', () => {
       expect(result.status).toBe('CANCELLED');
     });
   });
+
+  describe('deleteById', () => {
+    it('should delete order by id', async () => {
+      (db.order.delete as jest.Mock).mockResolvedValue(mockOrder);
+
+      await orderRepository.deleteById('order-1');
+
+      expect(db.order.delete).toHaveBeenCalledWith({ where: { id: 'order-1' } });
+    });
+  });
+
+  describe('findForErpSync', () => {
+    it('should include product external id/unit and user counterparty', async () => {
+      (db.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+
+      await orderRepository.findForErpSync('order-1');
+
+      expect(db.order.findUnique).toHaveBeenCalledWith({
+        where: { id: 'order-1' },
+        include: {
+          items: {
+            include: {
+              product: { select: { externalId: true, cleanName: true, unit: true } },
+            },
+          },
+          user: { select: { externalId: true } },
+        },
+      });
+    });
+  });
+
+  describe('updateErpSync', () => {
+    it('should persist ERP sync fields', async () => {
+      (db.order.update as jest.Mock).mockResolvedValue(mockOrder);
+      const syncedAt = new Date();
+
+      await orderRepository.updateErpSync('order-1', {
+        erpSyncStatus: 'SYNCED',
+        erpId: 'co-1',
+        erpNumber: 'МС-1',
+        erpSyncedAt: syncedAt,
+        erpError: null,
+      });
+
+      expect(db.order.update).toHaveBeenCalledWith({
+        where: { id: 'order-1' },
+        data: {
+          erpSyncStatus: 'SYNCED',
+          erpId: 'co-1',
+          erpNumber: 'МС-1',
+          erpSyncedAt: syncedAt,
+          erpError: null,
+        },
+      });
+    });
+  });
 });

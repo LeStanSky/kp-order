@@ -5,6 +5,7 @@ import ordersRoutes from './orders.routes';
 import stockAlertsRoutes from './stockAlerts.routes';
 import usersRoutes from './users.routes';
 import priceGroupsRoutes from './priceGroups.routes';
+import erpRoutes from './erp.routes';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/orders', ordersRoutes);
 router.use('/stock-alerts', stockAlertsRoutes);
 router.use('/users', usersRoutes);
 router.use('/price-groups', priceGroupsRoutes);
+router.use('/erp', erpRoutes);
 
 export default router;

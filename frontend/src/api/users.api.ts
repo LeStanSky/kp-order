@@ -12,6 +12,7 @@ export interface AdminUser {
   deliveryCategory: DeliveryCategory;
   priceGroupId: string | null;
   managerId: string | null;
+  externalId: string | null;
   priceGroup?: { id: string; name: string } | null;
   manager?: { id: string; name: string } | null;
   createdAt: string;
@@ -27,6 +28,7 @@ export interface CreateUserParams {
   canOrder?: boolean;
   managerId?: string | null;
   priceGroupId?: string | null;
+  externalId?: string | null;
 }
 
 export interface UpdateUserParams {
@@ -38,11 +40,18 @@ export interface UpdateUserParams {
   deliveryCategory?: DeliveryCategory;
   managerId?: string | null;
   priceGroupId?: string | null;
+  externalId?: string | null;
 }
 
 export interface PriceGroup {
   id: string;
   name: string;
+}
+
+export interface Counterparty {
+  id: string;
+  name: string;
+  inn?: string;
 }
 
 export const usersApi = {
@@ -73,5 +82,12 @@ export const usersApi = {
   getPriceGroups: async (): Promise<PriceGroup[]> => {
     const { data } = await apiClient.get<PriceGroup[]>('/api/price-groups');
     return data;
+  },
+
+  getCounterparties: async (search?: string): Promise<Counterparty[]> => {
+    const { data } = await apiClient.get<{ data: Counterparty[] }>('/api/erp/counterparties', {
+      params: search ? { search } : undefined,
+    });
+    return data.data;
   },
 };

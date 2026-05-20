@@ -9,6 +9,7 @@ vi.mock('@/hooks/useUsers', () => ({
   useUpdateUser: vi.fn(),
   useResetPassword: vi.fn(),
   usePriceGroups: vi.fn(),
+  useCounterparties: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -26,6 +27,7 @@ const mockUsers = [
     mustChangePassword: false,
     priceGroupId: 'pg-1',
     managerId: 'user-2',
+    externalId: null,
     priceGroup: { id: 'pg-1', name: 'Розница' },
     manager: { id: 'user-2', name: 'Мария Менеджер' },
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -41,6 +43,7 @@ const mockUsers = [
     mustChangePassword: false,
     priceGroupId: null,
     managerId: null,
+    externalId: null,
     priceGroup: null,
     manager: null,
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -51,13 +54,28 @@ const mockUsers = [
 beforeEach(async () => {
   vi.clearAllMocks();
 
-  const { useUsers, useCreateUser, useUpdateUser, useResetPassword, usePriceGroups } =
-    await import('@/hooks/useUsers');
+  const {
+    useUsers,
+    useCreateUser,
+    useUpdateUser,
+    useResetPassword,
+    usePriceGroups,
+    useCounterparties,
+  } = await import('@/hooks/useUsers');
   vi.mocked(useUsers).mockReturnValue({
     data: mockUsers,
     isLoading: false,
     error: null,
   } as ReturnType<typeof useUsers>);
+  vi.mocked(useCounterparties).mockReturnValue({
+    data: [
+      { id: 'cp-1', name: 'ООО Пивная лавка', inn: '7701234567' },
+      { id: 'cp-2', name: 'ИП Иванов' },
+    ],
+    isFetching: false,
+    isLoading: false,
+    error: null,
+  } as unknown as ReturnType<typeof useCounterparties>);
   vi.mocked(usePriceGroups).mockReturnValue({
     data: [
       { id: 'pg-1', name: 'Прайс основной' },
@@ -181,6 +199,30 @@ describe('UsersPage', () => {
     fireEvent.click(editButtons[0]); // Иван Клиент (CLIENT)
 
     expect(screen.getByTestId('manager-field')).toBeInTheDocument();
+  });
+
+  it('shows counterparty field when editing a CLIENT', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Иван Клиент')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByRole('button', { name: /редактировать/i });
+    fireEvent.click(editButtons[0]); // CLIENT
+
+    expect(screen.getByTestId('counterparty-field')).toBeInTheDocument();
+  });
+
+  it('does not show counterparty field when editing a MANAGER', async () => {
+    renderWithProviders(<UsersPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Иван Клиент')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByRole('button', { name: /редактировать/i });
+    fireEvent.click(editButtons[1]); // MANAGER
+
+    expect(screen.queryByTestId('counterparty-field')).not.toBeInTheDocument();
   });
 
   it('does not show manager select when editing a MANAGER', async () => {

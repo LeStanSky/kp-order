@@ -24,11 +24,18 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum ErpSyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
   password     String
   name         String
+  externalId       String?          @unique @map("external_id")
   role             UserRole         @default(CLIENT)
   deliveryCategory DeliveryCategory @default(STANDARD) @map("delivery_category")
   priceGroupId     String?          @map("price_group_id")
@@ -138,6 +145,12 @@ model Order {
   status      OrderStatus @default(PENDING)
   comment     String?
   totalAmount Float       @map("total_amount")
+  erpId         String?       @map("erp_id")
+  erpNumber     String?       @map("erp_number")
+  erpSyncStatus ErpSyncStatus @default(PENDING) @map("erp_sync_status")
+  erpSyncedAt   DateTime?     @map("erp_synced_at")
+  erpError      String?       @map("erp_error")
+  erpRetryCount Int           @default(0) @map("erp_retry_count")
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

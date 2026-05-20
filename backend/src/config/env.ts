@@ -23,6 +23,11 @@ export const env = {
   MOYSKLAD_TOKEN: process.env.MOYSKLAD_TOKEN || '',
   MOYSKLAD_BASE_URL: process.env.MOYSKLAD_BASE_URL || 'https://api.moysklad.ru/api/remap/1.2',
 
+  // ERP order sync (Phase 6) — push orders into the ERP
+  ERP_ORDER_SYNC_ENABLED: process.env.ERP_ORDER_SYNC_ENABLED === 'true',
+  MOYSKLAD_ORGANIZATION_ID: process.env.MOYSKLAD_ORGANIZATION_ID || '',
+  MOYSKLAD_STORE_ID: process.env.MOYSKLAD_STORE_ID || '',
+
   // SMTP
   SMTP_ENABLED: process.env.SMTP_ENABLED === 'true',
   SMTP_HOST: process.env.SMTP_HOST || '',

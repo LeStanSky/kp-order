@@ -5,11 +5,18 @@ import { prisma } from '../../config/database';
 import { generateOrderNumber } from '../../utils/orderNumberGenerator';
 import { emailService } from '../email.service';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../../utils/errors';
+import { enqueueOrderSync } from '../../jobs/orderSync.job';
+import { env } from '../../config/env';
 
 jest.mock('../../repositories/order.repository');
 jest.mock('../../repositories/user.repository');
 jest.mock('../../utils/orderNumberGenerator');
 jest.mock('../email.service');
+jest.mock('../../jobs/orderSync.job', () => ({
+  enqueueOrderSync: jest.fn().mockResolvedValue(undefined),
+}));
+
+const mockEnqueueOrderSync = enqueueOrderSync as jest.MockedFunction<typeof enqueueOrderSync>;
 
 const mockOrderRepo = orderRepository as jest.Mocked<typeof orderRepository>;
 const mockUserRepo = userRepository as jest.Mocked<typeof userRepository>;
@@ -350,6 +357,50 @@ describe('orderService', () => {
       expect(mockOrderRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({ totalAmount: 800 }),
       );
+    });
+
+    describe('ERP order sync enqueue', () => {
+      afterEach(() => {
+        env.ERP_ORDER_SYNC_ENABLED = false;
+      });
+
+      const setupHappyPath = (user: unknown) => {
+        mockUserRepo.findById.mockResolvedValue(user as any);
+        (db.price.findMany as jest.Mock).mockResolvedValue([
+          { productId: 'prod-1', value: 2500, currency: 'RUB' },
+        ]);
+        mockGenerateOrderNumber.mockResolvedValue('ORD-20260520-001');
+        mockOrderRepo.create.mockResolvedValue(mockOrder as any);
+        mockEmailService.sendOrderNotificationToManager.mockResolvedValue();
+        mockEmailService.sendOrderConfirmationToClient.mockResolvedValue();
+      };
+
+      it('enqueues a push when the flag is on and the user has a counterparty', async () => {
+        env.ERP_ORDER_SYNC_ENABLED = true;
+        setupHappyPath({ ...mockUser, externalId: 'agent-1' });
+
+        await orderService.createOrder('user-1', createInput);
+
+        expect(mockEnqueueOrderSync).toHaveBeenCalledWith('order-1');
+      });
+
+      it('does not enqueue when the flag is off', async () => {
+        env.ERP_ORDER_SYNC_ENABLED = false;
+        setupHappyPath({ ...mockUser, externalId: 'agent-1' });
+
+        await orderService.createOrder('user-1', createInput);
+
+        expect(mockEnqueueOrderSync).not.toHaveBeenCalled();
+      });
+
+      it('does not enqueue when the user has no counterparty link', async () => {
+        env.ERP_ORDER_SYNC_ENABLED = true;
+        setupHappyPath({ ...mockUser, externalId: null });
+
+        await orderService.createOrder('user-1', createInput);
+
+        expect(mockEnqueueOrderSync).not.toHaveBeenCalled();
+      });
     });
   });
 

@@ -8,6 +8,15 @@ export function usePriceGroups() {
   });
 }
 
+export function useCounterparties(search: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['counterparties', search],
+    queryFn: () => usersApi.getCounterparties(search || undefined),
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
 export function useUsers() {
   return useQuery({
     queryKey: ['users'],
